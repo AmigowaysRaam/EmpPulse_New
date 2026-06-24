@@ -23,11 +23,11 @@
         "NSMicrophoneUsageDescription": "This app needs microphone access to record audio"
       }
     },
-    "splash": {
-      "image": "./assets/images/empLogo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
-    },
+    // "splash": {
+    //   "image": "./assets/images/empLogo.png",
+    //   "resizeMode": "contain",
+    //   "backgroundColor": "#FFFFFF"
+    // },
     "android": {
       "adaptiveIcon": {
     "backgroundColor": "#FFFFFF",

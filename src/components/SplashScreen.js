@@ -191,7 +191,7 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Animated.Image
-        source={require("../../assets/images/empulse_logo.png")}
+        source={require("../../assets/images/amigo_logo.png")}
         style={[styles.logo, { transform: [{ scale: scaleAnim }] }]}
         resizeMode="contain"
       />

@@ -35,7 +35,7 @@ export default function LogoAnimated() {
     // siteDetails?.logo_image && !error
     //   ? 
     //   { uri: siteDetails.logo_image }      : 
-    require("../../assets/images/empulse_logo.png");
+    require("../../assets/images/amigo_logo.png");
   return (
     <View style={styles.container}>
       {loading && (
