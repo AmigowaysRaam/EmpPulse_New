@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "378441836611",
+    "project_id": "empulse-a8fbb",
+    "storage_bucket": "empulse-a8fbb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:378441836611:android:4d3ff5b5b05af8a48b4cf6",
+        "android_client_info": {
+          "package_name": "com.emppulse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBfT2IjOfIU1Kje6wkd4afEP5w9nwng_0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "EmpPulse",
+    "slug": "emppulse",
+    "version": "1.0.5",
+    "orientation": "portrait",
+    "icon": "./assets/images/empLogo.png",
+    "scheme": "emppulse",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "signingConfig": {
+      "keystorePath": "./emppulse.keystore",
+      "keystorePassword": "emppulse",
+      "keyAlias": "emppulse",
+      "keyPassword": "emppulse"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "kasemployee",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs camera access to take photos",
+        "NSPhotoLibraryUsageDescription": "This app needs photo library access to upload images",
+        "NSMicrophoneUsageDescription": "This app needs microphone access to record audio"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/empLogo.png",
+        "backgroundImage": "./assets/images/empLogo.png",
+        "monochromeImage": "./assets/images/empLogo.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.emppulse",
+      "googleServicesFile": "./google-services.json",
+      "useNextNotificationsApi": true,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
+      ]
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/empLogo.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "98da5af2-4a84-4eaa-9528-46861b536c05"
+      }
+    }
+  }
+}
