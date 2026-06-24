@@ -1,8 +1,8 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useMemo, useState } from "react";
 import {
-  FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity,
-  View,
+  FlatList, Image, RefreshControl,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { COLORS } from "../../app/resources/colors";
@@ -15,60 +15,46 @@ const MessageChatList = () => {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [ShowAllEmp, setShowAllEmp] = useState(false);
   const navigation = useNavigation();
+  const [refreshing, setRefreshing] = useState(false);
 
   const chatData = [
     {
-      id: "1",
-      name: "John Doe",
-      message: "Hi, how are you?",
-      time: "10:30 AM",
-      unread: 2,
-      avatar: "https://i.pravatar.cc/150?img=1",
+      id: "1", name: "John Doe", message: "Hi, how are you?",
+      time: "10:30 AM", unread: 2, avatar: "https://i.pravatar.cc/150?img=1",
       online: true,
       type: "Personal",
+    }, {
+      id: "2", name: "Sarah", message: "See you tomorrow",
+      time: "09:15 AM", unread: 1, avatar: "https://i.pravatar.cc/150?img=2",
+      online: false, type: "Personal",
+    }, {
+      id: "3", name: "Design Team", message: "Meeting starts at 4 PM",
+      time: "Yesterday", unread: 5, avatar: "https://i.pravatar.cc/150?img=3",
+      online: false, type: "Group",
+    }, {
+      id: "4", name: "Emma", message: "Can you call me?",
+      time: "Yesterday", unread: 0, avatar: "https://i.pravatar.cc/150?img=4",
+      online: true, type: "Personal",
     },
     {
-      id: "2",
-      name: "Sarah",
-      message: "See you tomorrow",
-      time: "09:15 AM",
-      unread: 1,
-      avatar: "https://i.pravatar.cc/150?img=2",
-      online: false,
-      type: "Personal",
-    },
-    {
-      id: "3",
-      name: "Design Team",
-      message: "Meeting starts at 4 PM",
-      time: "Yesterday",
-      unread: 5,
-      avatar: "https://i.pravatar.cc/150?img=3",
-      online: false,
-      type: "Group",
-    },
-    {
-      id: "4",
-      name: "Emma",
-      message: "Can you call me?",
-      time: "Yesterday",
-      unread: 0,
-      avatar: "https://i.pravatar.cc/150?img=4",
-      online: true,
-      type: "Personal",
-    },
-    {
-      id: "5",
-      name: "Development Team",
-      message: "Code pushed successfully",
-      time: "Monday",
-      unread: 3,
-      avatar: "https://i.pravatar.cc/150?img=5",
+      id: "5", name: "Development Team", message: "Code pushed successfully",
+      time: "Monday", unread: 3, avatar: "https://i.pravatar.cc/150?img=5",
       online: false,
       type: "Group",
     },
   ];
-
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Call your API here
+      // await getChatList();
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const filters = ["All", "Unread", "Groups"];
 
   const filteredChats = useMemo(() => {
@@ -91,12 +77,17 @@ const MessageChatList = () => {
     return data;
   }, [searchText, selectedFilter]);
 
+  // GroupChatScreen
   const renderItem = ({ item }) => (
-    <TouchableOpacity activeOpacity={0.8} style={styles.chatItem} onPress={
-      () => navigation?.navigate('ChatConvoScreen', {
-        item
-      })
-    }>
+    <TouchableOpacity
+      activeOpacity={0.8}
+      style={styles.chatItem}
+      onPress={() =>
+        item?.type === 'Group'
+          ? navigation?.navigate('GroupChatScreen', { item })
+          : navigation?.navigate('ChatConvoScreen', { item })
+      }
+    >
       <View style={styles.avatarContainer}>
         <Image source={{ uri: item.avatar }} style={styles.avatar} />
 
@@ -130,7 +121,7 @@ const MessageChatList = () => {
           )}
         </View>
       </View>
-    </TouchableOpacity>
+    </TouchableOpacity >
   );
 
   const renderFilter = (item) => (
@@ -161,14 +152,12 @@ const MessageChatList = () => {
       <AllEmployeeModal
         visible={false}
       />
-      {/* Search */}
       <View style={styles.searchContainer}>
         <Ionicons
           name="search"
           size={22}
           color="#777"
         />
-
         <TextInput
           placeholder="Search chats..."
           placeholderTextColor="#999"
@@ -188,6 +177,14 @@ const MessageChatList = () => {
         ItemSeparatorComponent={() => (
           <View style={styles.separator} />
         )}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}       // Android
+            tintColor={COLORS.primary}      // iOS
+          />
+        }
       />
       <TouchableOpacity
         onPress={() => setShowAllEmp(true)}

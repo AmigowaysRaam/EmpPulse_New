@@ -4,7 +4,7 @@ import {
     StyleSheet, Text, View,
 } from "react-native";
 import { hp, wp } from "../app/resources/dimensions";
-const appIcon = require("../assets/yuvarajscaffolding-appicon.png");
+const appIcon = require("../assets/empLogo.png");
 const ToastContext = createContext();
 export const useToast = () => useContext(ToastContext);
 
@@ -28,7 +28,6 @@ export const ToastProvider = ({ children }) => {
                 useNativeDriver: true,
             }),
         ]).start();
-
         // Hide animation
         setTimeout(() => {
             Animated.parallel([

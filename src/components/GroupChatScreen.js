@@ -8,12 +8,12 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from "react-native";
+
 import { Swipeable } from "react-native-gesture-handler";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
@@ -21,29 +21,46 @@ import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import ChatInputBar from "./ChatInput";
 
-const ChatConvoScreen = ({ route }) => {
+const GroupChatScreen = ({ route }) => {
   const { item } = route?.params || {};
   const navigation = useNavigation();
 
   const flatListRef = useRef();
   const swipeRefs = useRef(new Map());
+  const messageInputRef = useRef(null);
 
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const [messages, setMessages] = useState([
-    { id: "1", text: "Hi, how are you?", sender: "them", time: "10:30 AM", reaction: null, starred: false },
-    { id: "2", text: "I'm good, what about you?", sender: "me", time: "10:31 AM", reaction: null, starred: false },
+    {
+      id: "1",
+      text: "Hi, how are you?",
+      sender: {
+        id: "u1",
+        name: "Arun",
+        avatar: "https://i.pravatar.cc/150?img=1",
+      },
+      time: "10:30 AM",
+      reaction: null,
+      starred: false,
+    },
+    {
+      id: "2",
+      text: "I'm good, what about you?",
+      sender: {
+        id: "me",
+        name: "You",
+        avatar: "https://i.pravatar.cc/150?img=2",
+      },
+      time: "10:31 AM",
+      reaction: null,
+      starred: false,
+    },
   ]);
 
   const [inputText, setInputText] = useState("");
   const [replyTo, setReplyTo] = useState(null);
 
-  const [activeReactionMsg, setActiveReactionMsg] = useState(null);
-  const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
-
-  const messageInputRef = useRef(null);
-
-  // ✅ NEW UI STATE (ONLY ADDITION)
   const [selectedMsg, setSelectedMsg] = useState(null);
   const [showActionModal, setShowActionModal] = useState(false);
 
@@ -67,23 +84,28 @@ const ChatConvoScreen = ({ route }) => {
     };
   }, []);
 
+  // ✅ SAFE SEND MESSAGE
   const sendMessage = () => {
     if (!inputText.trim()) return;
 
     const newMsg = {
       id: Date.now().toString(),
       text: inputText,
-      sender: "me",
+      sender: {
+        id: "me",
+        name: "You",
+        avatar: "https://i.pravatar.cc/150?img=2",
+      },
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      replyTo: replyTo || null,
       reaction: null,
       starred: false,
+      replyTo: replyTo || null,
     };
 
-    setMessages((prev) => [...prev, newMsg]);
+    setMessages(prev => [...prev, newMsg]);
     setInputText("");
     setReplyTo(null);
 
@@ -92,20 +114,10 @@ const ChatConvoScreen = ({ route }) => {
     }, 100);
   };
 
-  const addReaction = (emoji) => {
-    if (!activeReactionMsg) return;
-
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === activeReactionMsg.id
-          ? { ...m, reaction: emoji }
-          : m
-      )
-    );
-    setActiveReactionMsg(null);
-  };
+  // ✅ SAFE STAR
   const toggleStar = () => {
     if (!selectedMsg?.id) return;
+
     setMessages(prev =>
       prev.map(m =>
         m.id === selectedMsg.id
@@ -113,53 +125,72 @@ const ChatConvoScreen = ({ route }) => {
           : m
       )
     );
+
     setShowActionModal(false);
     setSelectedMsg(null);
   };
 
+  // ✅ SAFE DELETE
   const deleteMsg = () => {
     if (!selectedMsg?.id) return;
-    setMessages(prev => prev.filter(m => m.id !== selectedMsg.id));
+
+    setMessages(prev =>
+      prev.filter(m => m.id !== selectedMsg.id)
+    );
+
     setShowActionModal(false);
     setSelectedMsg(null);
   };
 
+  // ✅ SAFE COPY
   const copyMsg = () => {
     if (!selectedMsg?.text) return;
+
     Clipboard.setString(selectedMsg.text);
+
     setShowActionModal(false);
     setSelectedMsg(null);
   };
 
+  // ✅ SAFE EDIT
   const editMsg = () => {
     if (!selectedMsg?.id) return;
 
-    setInputText(selectedMsg.text);
-
-    setMessages(prev =>
-      prev.map(m =>
-        m.id === selectedMsg.id
-          ? { ...m, text: selectedMsg.text, isEditing: true }
-          : m
-      )
-    );
+    setInputText(selectedMsg.text || "");
 
     setShowActionModal(false);
     setSelectedMsg(null);
   };
 
+  // ✅ SWIPE REPLY (SAFE)
+  const renderRightActions = (msg) => (
+    <TouchableOpacity
+      style={styles.swipeActionArea}
+      onPress={() => {
+        if (!msg) return;
 
+        setReplyTo(msg);
+        setTimeout(() => {
+          messageInputRef.current?.focus();
+        }, 100);
 
+        const ref = swipeRefs.current.get(msg.id);
+        ref?.close();
+      }}
+    >
+      <Text style={styles.swipeHint}>Reply</Text>
+    </TouchableOpacity>
+  );
 
+  // ✅ RENDER MESSAGE (FULL SAFE)
+  const renderItem = ({ item, index }) => {
+    if (!item?.sender) return null;
 
-  const renderItem = ({ item }) => {
-    const isMe = item.sender === "me";
+    const isMe = item.sender.id === "me";
+    const prev = messages[index - 1];
 
-    const renderRightActions = () => (
-      <View style={styles.swipeActionArea}>
-        <Text style={styles.swipeHint}>↩</Text>
-      </View>
-    );
+    const showAvatar =
+      !prev || prev?.sender?.id !== item?.sender?.id;
 
     return (
       <Swipeable
@@ -168,8 +199,8 @@ const ChatConvoScreen = ({ route }) => {
         }}
         renderRightActions={renderRightActions}
         onSwipeableOpen={() => {
+          // Alert.alert('',JSON.stringify(item))
           setReplyTo(item);   // ✅ SET REPLY HERE
-
           setTimeout(() => {
             messageInputRef.current?.focus();
           }, 100);
@@ -181,54 +212,71 @@ const ChatConvoScreen = ({ route }) => {
         <TouchableOpacity
           activeOpacity={0.9}
           onLongPress={() => {
-            // ✅ OPEN ACTION MODAL (NEW ONLY)
             setSelectedMsg(item);
             setShowActionModal(true);
           }}
         >
-          <View style={[styles.row, isMe ? styles.right : styles.left]}>
+          <View style={[
+            styles.messageRow,
+            isMe ? styles.rightAlign : styles.leftAlign
+          ]}>
+
+            {!isMe && showAvatar && (
+              <Image
+                source={{ uri: item.sender?.avatar }}
+                style={styles.avatar}
+              />
+            )}
+
             <View style={[
               styles.bubble,
-              isMe ? styles.myBubble : styles.theirBubble,
+              isMe ? styles.myBubble : styles.theirBubble
             ]}>
 
-              {item.replyTo && (
-                <View style={styles.inlineReply}>
-                  <View style={styles.replyLine} />
-                  <Text numberOfLines={1}>{item.replyTo.text}</Text>
+              {!isMe && showAvatar && (
+                <Text style={styles.senderName}>
+                  {item.sender?.name}
+                </Text>
+              )}
+
+              {item.replyTo?.text && (
+                <View style={styles.replyBox}>
+                  <Text numberOfLines={1} style={styles.replyText}>
+                    {item.replyTo.text}
+                  </Text>
                 </View>
               )}
-
-              <Text style={styles.text}>{item.text}</Text>
-
-              {item.starred && (
-                <Text style={{ fontSize: wp(3) }}>⭐</Text>
-              )}
-
-              {item.reaction && (
-                <Text style={styles.reaction}>{item.reaction}</Text>
-              )}
-
-              <Text style={styles.time}>{item.time}</Text>
+              <Text style={styles.messageText}>{item.text}</Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.time}>{item.time}</Text>
+                {item.starred && <Text>⭐</Text>}
+              </View>
             </View>
+            {isMe && showAvatar && (
+              <Image
+                source={{ uri: item.sender?.avatar }}
+                style={styles.avatar}
+              />
+            )}
           </View>
         </TouchableOpacity>
       </Swipeable>
     );
   };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Ionicons onPress={() => navigation.goBack()} name="chevron-back" size={wp(7)} />
-          <Pressable style={{ flexDirection: "row" }}>
-            <Image source={{ uri: item?.avatar }} style={styles.avatar} />
-            <View>
-              <Text style={styles.name}>{item?.name}</Text>
-              <Text style={styles.lastSeen}>last seen today</Text>
-            </View>
-          </Pressable>
-
+          <Ionicons
+            onPress={() => navigation.goBack()}
+            name="chevron-back"
+            size={wp(7)}
+          />
+          <Image source={{ uri: item?.avatar }} style={styles.headerAvatar} />
+          <View>
+            <Text style={styles.name}>{item?.name}</Text>
+          </View>
         </View>
 
         {/* CHAT */}
@@ -242,10 +290,7 @@ const ChatConvoScreen = ({ route }) => {
             paddingBottom: hp(12) + keyboardHeight,
           }}
         />
-
-        {/* INPUT */}
-        <View style={[styles.inputContainer, { bottom: keyboardHeight, zIndex: 999, elevation: 10 }]}>
-
+        <View style={[styles.inputContainer, { bottom: keyboardHeight }]}>
           {replyTo && (
             <View style={styles.replyBar}>
               <View style={styles.replyBarLine} />
@@ -262,37 +307,28 @@ const ChatConvoScreen = ({ route }) => {
               </TouchableOpacity>
             </View>
           )}
-
           <ChatInputBar
             inputText={inputText}
             setInputText={setInputText}
             onSend={sendMessage}
             messageInputRef={messageInputRef}
           />
-
         </View>
-        <Modal
-          visible={showActionModal}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowActionModal(false)}
 
-        >
+        {/* ACTION MODAL */}
+        <Modal visible={showActionModal} transparent animationType="fade">
           <TouchableOpacity
             style={styles.modalOverlay}
-            activeOpacity={1}
             onPress={() => {
               setShowActionModal(false);
               setSelectedMsg(null);
             }}
           >
             <View style={styles.actionBox}>
-
               <ActionBtn icon="create-outline" label="Edit" onPress={editMsg} />
               <ActionBtn icon="trash-outline" label="Delete" onPress={deleteMsg} />
               <ActionBtn icon="star-outline" label="Star" onPress={toggleStar} />
               <ActionBtn icon="copy-outline" label="Copy" onPress={copyMsg} />
-
             </View>
           </TouchableOpacity>
         </Modal>
@@ -304,63 +340,24 @@ const ChatConvoScreen = ({ route }) => {
 
 const ActionBtn = ({ icon, label, onPress }) => (
   <TouchableOpacity onPress={onPress} style={styles.actionRow}>
-    <Ionicons name={icon} size={20} color="#333" />
+    <Ionicons name={icon} size={20} />
     <Text style={styles.actionText}>{label}</Text>
   </TouchableOpacity>
 );
 
-export default ChatConvoScreen;
+export default GroupChatScreen;
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS?.primary + "12" },
+  container: { flex: 1, backgroundColor: "#EAF2F8" },
+
   header: {
-    height: hp(8), flexDirection: "row",
+    height: hp(8),
+    flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: wp(4),
-    borderBottomWidth: 0.5,
-    borderColor: COLORS?.primary + 22
-  },
-  avatar: {
-    width: wp(10), height: wp(10), borderRadius: wp(5),
-    marginHorizontal: wp(2),
-  },
-  name: { fontSize: wp(3.8), fontWeight: "600" }, lastSeen: { fontSize: wp(2.8), color: "#777" },
-  row: { marginVertical: hp(0.5) },
-  left: { alignItems: "flex-start" }, right: { alignItems: "flex-end" },
-  bubble: {
-    maxWidth: "75%",
-    padding: wp(3),
-    borderRadius: wp(4),
-  },
-  myBubble: {
-    backgroundColor: COLORS?.primary + 10,
-    borderTopRightRadius: 0,
-  },
-  theirBubble: {
-    backgroundColor: "#fff", borderTopLeftRadius: 0,
-  },
-  text: { fontSize: wp(3.3), color: "#111" },
-
-  time: {
-    fontSize: wp(2.5), marginTop: hp(0.3),
-    opacity: 0.6, textAlign: "right",
-  },
-  inputContainer: {
-    position: "absolute", left: 0, right: 0,
+    paddingHorizontal: wp(3),
     backgroundColor: "#fff",
-    borderTopWidth: 1, borderColor: "#eee",
+    elevation: 3,
   },
-
-  inputRow: {
-    flexDirection: "row", alignItems: "center",
-    paddingHorizontal: wp(2), paddingVertical: hp(1),
-  },
-
-  input: {
-    flex: 1, backgroundColor: "#F4F5F7",
-    borderRadius: wp(6), paddingHorizontal: wp(4),
-    height: hp(5), fontSize: wp(3.3),
-    color: "#000",
-  }, replyBar: {
+  replyBar: {
     flexDirection: "row", alignItems: "center",
     padding: wp(2), backgroundColor: "#f1f1f1",
   }, replyBarLine: {
@@ -375,83 +372,122 @@ const styles = StyleSheet.create({
   replyBarText: {
     fontSize: wp(3.2), color: "#111",
   },
-  inlineReply: {
-    flexDirection: "row", alignItems: "center", marginBottom: hp(0.5),
-    backgroundColor: "#f3f3f3", padding: wp(1.5), borderRadius: wp(2),
-  }, replyLine: {
-    width: 3, height: "100%",
-    backgroundColor: "#25D366",
+  headerAvatar: {
+    width: wp(10),
+    height: wp(10),
+    borderRadius: wp(5),
+    marginHorizontal: wp(2),
+  },
+
+  name: { fontSize: wp(3.8), fontWeight: "600" },
+  lastSeen: { fontSize: wp(2.8), color: "#777" },
+
+  messageRow: {
+    flexDirection: "row",
+    marginVertical: hp(0.3),
+    alignItems: "flex-end",
+  },
+
+  leftAlign: { justifyContent: "flex-start" },
+  rightAlign: { justifyContent: "flex-end" },
+
+  avatar: {
+    width: wp(7),
+    height: wp(7),
+    borderRadius: wp(3.5),
     marginRight: wp(2),
-    borderRadius: 2,
+  },
+  senderName: {
+    fontSize: wp(3),
+    fontWeight: "600",
+    color: "#444",
+    marginBottom: wp(1),
+  },
+  bubble: {
+    maxWidth: "75%",
+    padding: wp(3),
+    borderRadius: wp(4),
+  },
+
+  myBubble: {
+    backgroundColor: "#DCF8C6",
+    borderTopRightRadius: 0,
+  },
+
+  theirBubble: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 0,
+  },
+
+  messageText: {
+    fontSize: wp(3.4),
+    color: "#111",
+  },
+
+  metaRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: hp(0.5),
+    gap: 4,
+  },
+
+  time: {
+    fontSize: wp(2.4),
+    color: "#666",
+  },
+
+  inputContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderTopWidth: 0.5,
+    borderColor: "#ddd",
   },
 
   swipeActionArea: {
     justifyContent: "center",
-    alignItems: "center", width: wp(25), backgroundColor: "transparent",
-  }, modalOverlay: {
-    flex: 1, backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    width: wp(20),
+  },
+
+  swipeHint: { fontSize: wp(3.2), color: "#111" },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
     justifyContent: "center",
     alignItems: "center",
-  }, actionBox: {
-    width: wp(60), backgroundColor: "#fff", borderRadius: wp(4),
-    paddingVertical: wp(2), elevation: 10,
-  }, actionRow: {
-    flexDirection: "row", alignItems: "center",
-    padding: wp(3), borderBottomWidth: 0.5, borderColor: "#eee",
+  },
+
+  actionBox: {
+    width: wp(60),
+    backgroundColor: "#fff",
+    borderRadius: wp(4),
+  },
+
+  actionRow: {
+    flexDirection: "row",
+    padding: wp(3),
+    borderBottomWidth: 0.5,
+    borderColor: "#eee",
+    alignItems: "center",
   },
 
   actionText: {
-    marginLeft: wp(3), fontSize: wp(3.5), color: "#333",
+    marginLeft: wp(3),
+    fontSize: wp(3.5),
   },
 
-  swipeHint: {
-    fontWeight: "600",
-    color: "#111",
-  },
-  sendBtn: {
-    backgroundColor: COLORS.primary,
-    width: wp(9),
-    height: wp(9),
-    borderRadius: wp(4.5),
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: wp(2),
-  },
-  swipeReply: {
-    justifyContent: "center",
-    alignItems: "center",
-    width: wp(20),
-    backgroundColor: "#DCF8C6",
-    marginVertical: hp(0.5),
-    borderRadius: wp(3),
-  },
-
-  swipeReplyText: {
-    color: "#111",
-    fontWeight: "600",
-    fontSize: wp(3),
-  },
-  reactionPopup: {
-    position: "absolute",
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    padding: wp(2),
-    borderRadius: wp(6),
-    elevation: 8,
-    marginTop: wp(4)
-  },
-
-  emoji: {
-    fontSize: wp(6),
-    marginHorizontal: wp(2),
-  },
-  reaction: {
-    fontSize: wp(4),
-  },
   replyBox: {
-    borderLeftWidth: 3,
-    borderColor: "#25D366",
-    position: "absolute",
-    paddingLeft: wp(2),
+    backgroundColor: "#ff0000",
+    padding: wp(1.5),
+    borderRadius: wp(2),
+    marginBottom: hp(0.5),
+  },
+
+  replyText: {
+    fontSize: wp(3),
+    color: "#444",
   },
 });

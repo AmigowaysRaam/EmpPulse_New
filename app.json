@@ -2,7 +2,7 @@
   "expo": {
     "name": "EmpPulse",
     "slug": "emppulse",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/empLogo.png",
     "scheme": "emppulse",
@@ -23,12 +23,16 @@
         "NSMicrophoneUsageDescription": "This app needs microphone access to record audio"
       }
     },
+    "splash": {
+      "image": "./assets/images/empLogo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+    "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/empLogo.png",
-        "backgroundImage": "./assets/images/empLogo.png",
-        "monochromeImage": "./assets/images/empLogo.png"
+    
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,

@@ -10,6 +10,7 @@ import ChatConvoScreen from '../ChatConvoScreen';
 import CreateMpin from '../CreateMpin';
 import CreateTask from '../CreateTask';
 import forgetotpVerfication from '../forgetotpVerfication';
+import GroupChatScreen from '../GroupChatScreen';
 import LeadDetailtScreen from '../LeadDetailtScreen';
 import LeadListScreen from '../LeadListScreen';
 import LeaveManagement from '../LeaveManagement';
@@ -79,6 +80,7 @@ export default function StackNavi() {
       <Stack.Screen name='MeetingDetailsScreen' component={MeetingDetailsScreen} />
       <Stack.Screen name='AllMeetings' component={AllMeetings} />
       <Stack.Screen name='ChatConvoScreen' component={ChatConvoScreen} />
+      <Stack.Screen name='GroupChatScreen' component={GroupChatScreen} />
 
       <Stack.Screen
         name="LeadListScreen"
