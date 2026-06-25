@@ -172,7 +172,7 @@ export default function AttendanceLogin() {
                 );
             }
             const response = await fetch(
-                "https://hrms.yuvarajscaffoldingtraders.com/api/?url=face-attendance-mark",
+                "https://amigoways.org/api/?url=face-attendance-mark",
                 {
                     method: "POST",
                     body: formData,

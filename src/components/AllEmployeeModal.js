@@ -1,59 +1,90 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity,
+  View
 } from "react-native";
 import { useSelector } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
 import { wp } from "../../app/resources/dimensions";
 import { fetchData } from "./api/Api";
-
 const AllEmployeeModal = ({ visible, onClose }) => {
   const profileDetails = useSelector(
     (state) => state?.auth?.profileDetails?.data
   );
-
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [paginationLoading, setPaginationLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [employeeList, setEmployeeList] = useState([]);
   const [search, setSearch] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fnGetAllEmp = async () => {
+  const onRefresh = async () => {
     try {
-      setLoading(true);
+      setRefreshing(true); setPage(1); setHasMore(true);
+      await fnGetAllEmp(1, false, search.trim());
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const fnGetAllEmp = async (
+    pageNo = 1,
+    isLoadMore = false,
+    searchText = search
+  ) => {
+    try {
+      if (isLoadMore) {
+        setPaginationLoading(true);
+      } else {
+        setLoading(true);
+      }
 
       const response = await fetchData("kas-employee-list", "POST", {
         companyId: profileDetails?.companyId,
-        limit: 100,
-        page: 1,
-        search: "",
+        limit: 20,
+        page: pageNo,
+        search: searchText,
       });
 
-      console.log(
-        "Employee Response",
-        JSON.stringify(response?.employees?.[0], null, 2)
-      );
+      const employees = Array.isArray(response?.employees)
+        ? response.employees
+        : [];
 
-      setEmployeeList(
-        Array.isArray(response?.employees) ? response.employees : []
-      );
+      setHasMore(employees.length >= 20);
+
+      if (isLoadMore) {
+        setEmployeeList((prev) => [...prev, ...employees]);
+      } else {
+        setEmployeeList(employees);
+      }
     } catch (err) {
       console.log("Employee List Error:", err);
     } finally {
       setLoading(false);
+      setPaginationLoading(false);
     }
   };
-
   useEffect(() => {
     if (visible) {
-      fnGetAllEmp();
+      setPage(1);
+      setHasMore(true);
+      setEmployeeList([]);
+      fnGetAllEmp(1);
     }
   }, [visible]);
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      setPage(1);
+      setHasMore(true);
+      fnGetAllEmp(1, false, search.trim());
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [search]);
 
   const getEmployeeName = (employee) => {
     if (!employee) return "Unknown Employee";
@@ -77,17 +108,35 @@ const AllEmployeeModal = ({ visible, onClose }) => {
     return "Unknown Employee";
   };
 
-  const filteredEmployees = useMemo(() => {
-    return employeeList.filter((employee) =>
-      getEmployeeName(employee)
-        .toLowerCase()
-        .includes(search.trim().toLowerCase())
-    );
-  }, [employeeList, search]);
-
+  const handleLoadMore = () => {
+    if (
+      loading ||
+      paginationLoading ||
+      !hasMore
+    ) {
+      return;
+    }
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fnGetAllEmp(nextPage, true, search.trim());
+  };
+  const handleStartChart = async (props) => {
+    try {
+      setLoading(true);
+      const response = await fetchData("chat-dm-create", "POST", {
+        companyId: profileDetails?.companyId,
+        contactId: props?._id,
+        userId: profileDetails?._id
+      });
+      console?.log(response, "chat-dm-create")
+    } catch (err) {
+      console.log("Employee List Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
   const renderItem = ({ item }) => {
     const employeeName = getEmployeeName(item);
-
     const mobileNumber =
       typeof item?.mobileNumber === "object"
         ? item?.mobileNumber?.number || item?.mobileNumber?.mobile || ""
@@ -99,7 +148,9 @@ const AllEmployeeModal = ({ visible, onClose }) => {
         : item?.designation;
 
     return (
-      <TouchableOpacity activeOpacity={0.8} style={styles.card}>
+      <TouchableOpacity activeOpacity={0.8} style={styles.card} onPress={() => {
+        handleStartChart(item)
+      }}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
             {employeeName?.charAt(0)?.toUpperCase() || "E"}
@@ -124,6 +175,16 @@ const AllEmployeeModal = ({ visible, onClose }) => {
       </TouchableOpacity>
     );
   };
+  const renderFooter = () => {
+    if (!paginationLoading) return null;
+
+    return (
+      <View style={{ paddingVertical: 15 }}>
+        <ActivityIndicator size="small" color={COLORS?.primary} />
+      </View>
+    );
+  };
+
 
   return (
 
@@ -143,8 +204,6 @@ const AllEmployeeModal = ({ visible, onClose }) => {
               <Text style={styles.close}>✕</Text>
             </TouchableOpacity>
           </View>
-
-          {/* Search */}
           <View style={styles.searchContainer}>
             <TextInput
               placeholder="Search employee..."
@@ -153,33 +212,33 @@ const AllEmployeeModal = ({ visible, onClose }) => {
               onChangeText={setSearch}
               style={styles.searchInput}
             />
-
             {!!search && (
               <TouchableOpacity onPress={() => setSearch("")}>
                 <Text style={styles.clearText}>✕</Text>
               </TouchableOpacity>
             )}
           </View>
-
-          {!loading && (
-            <Text style={styles.countText}>
-              Total Employees: {filteredEmployees.length}
-            </Text>
-          )}
-
           {loading ? (
             <View style={styles.loaderContainer}>
               <ActivityIndicator size="large" color="#4F46E5" />
             </View>
           ) : (
             <FlatList
-              data={filteredEmployees}
+              data={employeeList}
               keyExtractor={(item, index) =>
                 String(item?._id?._id || item?._id || item?.id || index)
               }
               renderItem={renderItem}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 20 }}
+              contentContainerStyle={{
+                paddingBottom: 20,
+                flexGrow: 1,
+              }}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.3}
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              ListFooterComponent={renderFooter}
               ListEmptyComponent={() => (
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyText}>
@@ -194,149 +253,47 @@ const AllEmployeeModal = ({ visible, onClose }) => {
     </Modal>
   );
 };
-
 export default AllEmployeeModal;
-
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    alignItems: "center",
+    flex: 1, backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center", alignItems: "center",
   },
-
   container: {
-    width: "95%",
-    height: "75%",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 10,
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-
-    elevation: 10,
-  },
-
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#111827",
-  },
-
-  close: {
-    fontSize: 22,
-    fontWeight: "700",
-  },
-
+    width: "93%", height: "80%", backgroundColor: "#F8FAFC", borderRadius: wp(2), paddingHorizontal: wp(3), paddingTop: wp(2),
+    paddingBottom: wp(2),
+  }, header: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 15,
+  }, title: { fontSize: wp(4.9), color: "#111827", fontFamily: "Poppins_400Regular" }, close: { fontSize: 22, fontWeight: "700", },
   searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 12,
     paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    marginBottom: 10,
-  },
-
-  searchInput: {
+    borderWidth: 1, borderColor: "#E5E7EB", marginBottom: 10,
+  }, searchInput: {
     flex: 1,
-    height: 48,
-    fontSize: 15,
-    color: "#111827",
-  },
-
-  clearText: {
-    fontSize: 18,
-    color: "#999",
-    paddingLeft: 10,
-  },
-
-  countText: {
-    marginBottom: 10,
-    fontSize: 13,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
-
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: wp(1),
-
-  },
-
-  avatar: {
-    width: wp(10),
-    height: wp(10),
-    borderRadius: wp(10),
-    backgroundColor: COLORS?.primary,
+    height: 48, fontSize: 15, color: "#111827", fontFamily: "Poppins_400Regular"
+  }, clearText: {
+    fontSize: 18, color: "#999", paddingLeft: 10, fontFamily: "Poppins_400Regular"
+  }, countText: {
+    marginBottom: 10, fontSize: 13, color: "#6B7280", fontWeight: "500",
+    fontFamily: "Poppins_400Regular"
+  }, card: {
+    flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", padding: wp(2),
+    borderRadius: 14, marginBottom: wp(1),
+  }, avatar: {
+    width: wp(10), height: wp(10), borderRadius: wp(10), backgroundColor: COLORS?.primary,
     justifyContent: "center",
-    alignItems: "center",
-    marginRight: wp(3),
+    alignItems: "center", marginRight: wp(3),
+  }, avatarText: {
+    color: "#FFFFFF", fontSize: wp(4.3), fontFamily: "Poppins_400Regular"
   },
-
-  avatarText: {
-    color: "#FFFFFF",
-    fontSize: wp(4),
-    fontWeight: "700",
-  },
-
   info: {
-    flex: 1,
-  },
-
-  name: {
-    fontSize: wp(3.5),
-    fontWeight: "700",
-    color: "#111827",
-    textTransform: "capitalize"
-  },
-
-  mobile: {
-    marginTop: 4,
-    fontSize: wp(3.5),
-    color: "#6B7280",
-  },
-
-  designation: {
-    marginTop: 4,
-    fontSize: wp(3.5),
-    color: "#4F46E5",
-    fontWeight: "600",
-  },
-
-  loaderContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  emptyContainer: {
-    marginTop: 60,
-    alignItems: "center",
-  },
-
-  emptyText: {
-    fontSize: 15,
-    color: "#9CA3AF",
-  },
+    flex: 1, fontFamily: "Poppins_400Regular"
+  }, name: {
+    fontSize: wp(3.5), fontWeight: "700", color: "#111827", textTransform: "capitalize", fontFamily: "Poppins_400Regular"
+  }, mobile: {
+    marginTop: 4, fontSize: wp(3.5), color: "#6B7280", fontWeight: "700",
+  }, designation: { marginTop: 4, fontSize: wp(3.5), color: "#4F46E5", },
+  loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center", },
+  emptyContainer: { marginTop: 60, alignItems: "center", }, emptyText: { fontSize: 15, color: "#9CA3AF", },
 });

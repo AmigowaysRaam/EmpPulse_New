@@ -3,19 +3,23 @@ import AllMeetings from '../AllMeetings';
 import AssignTaskListScreen from '../AssignTaskListScreen';
 import Attendance from '../Attendance';
 import AttendanceActivity from '../AttendanceActivity';
+import AttendanceGroupScreen from '../AttendanceGroupscreen';
 import AttendanceLog from '../AttendanceLog';
 import AttendanceLoginScreen from '../AtttendanceLogin';
 import ChangeMpin from '../ChangeMpin';
 import ChatConvoScreen from '../ChatConvoScreen';
+import ChatUserProfileScreen from '../ChatUserProfileScreen';
 import CreateMpin from '../CreateMpin';
 import CreateTask from '../CreateTask';
 import forgetotpVerfication from '../forgetotpVerfication';
+import GroupChatInfoScreen from '../GroupChatInfoScreen';
 import GroupChatScreen from '../GroupChatScreen';
 import LeadDetailtScreen from '../LeadDetailtScreen';
 import LeadListScreen from '../LeadListScreen';
 import LeaveManagement from '../LeaveManagement';
 import Login from '../Login';
 import MaintainancePage from '../MaintainancePage';
+import MediaSharedScreen from '../MediaSharedScreen';
 import MeetingDetailsScreen from '../MeetingDetailsScreen';
 import MeetingTimeLine from '../MeetingTimeLine';
 import MobileLogin from '../MobileLogin';
@@ -32,6 +36,7 @@ import ResetMpin from '../ResetMpin';
 import SalesLocationScreen from '../SalesLoc';
 import SettingsScreen from '../Settings';
 import SplashScreen from '../SplashScreen';
+import StarredMessagesScreen from '../StarredMessagesScreen';
 import TasKDetailById from '../TasKDetailById';
 import TaskDetails from '../TaskDetails';
 import TermsScreen from '../Terms';
@@ -81,7 +86,11 @@ export default function StackNavi() {
       <Stack.Screen name='AllMeetings' component={AllMeetings} />
       <Stack.Screen name='ChatConvoScreen' component={ChatConvoScreen} />
       <Stack.Screen name='GroupChatScreen' component={GroupChatScreen} />
-
+      <Stack.Screen name='ChatUserProfileScreen' component={ChatUserProfileScreen} />
+      <Stack.Screen name='StarredMessagesScreen' component={StarredMessagesScreen} />
+      <Stack.Screen name='MediaSharedScreen' component={MediaSharedScreen} />
+      <Stack.Screen name='GroupChatInfoScreen' component={GroupChatInfoScreen} />
+      <Stack.Screen name='AttendanceGroupScreen' component={AttendanceGroupScreen} />
       <Stack.Screen
         name="LeadListScreen"
         component={LeadListScreen}

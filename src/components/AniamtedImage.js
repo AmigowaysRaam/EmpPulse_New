@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Animated, StyleSheet, View,
+  Animated, StyleSheet, View
 } from "react-native";
 import { useSelector } from "react-redux";
-import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 
 export default function LogoAnimated() {
@@ -35,16 +34,16 @@ export default function LogoAnimated() {
     // siteDetails?.logo_image && !error
     //   ? 
     //   { uri: siteDetails.logo_image }      : 
-    require("../../assets/images/amigo_logo.png");
+    require("../../assets/splashscreen_logo.png");
   return (
     <View style={styles.container}>
-      {loading && (
+      {/* {loading && (
         <ActivityIndicator
           size="large"
           color={COLORS?.primary}
           style={StyleSheet.absoluteFill} // overlays the image
         />
-      )}
+      )} */}
       <Animated.Image
         source={imageSource}
         onLoadStart={() => setLoading(true)}
@@ -60,7 +59,7 @@ export default function LogoAnimated() {
               { translateY: slideAnim },
               { scale: scaleAnim },
             ],
-            height: hp(26),
+            height: hp(28),
             width: wp(80),
           },
         ]}
@@ -73,7 +72,8 @@ export default function LogoAnimated() {
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    justifyContent: "center",
   },
-  logo: {},
+  logo: {
+   marginTop:wp(1)
+  },
 });

@@ -148,6 +148,7 @@ export default function Homescreen() {
         </Pressable>
       }
       <ScrollView
+      showsVerticalScrollIndicator={false}
         style={styles.scrollContainer}
         refreshControl={
           <RefreshControl

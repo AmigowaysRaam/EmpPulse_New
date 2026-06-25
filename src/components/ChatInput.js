@@ -8,9 +8,7 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
-
 const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
-
     const [showAttach, setShowAttach] = useState(false);
     const [recording, setRecording] = useState(null);
     const [isRecording, setIsRecording] = useState(false);

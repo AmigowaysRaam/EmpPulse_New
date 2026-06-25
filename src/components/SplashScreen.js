@@ -75,7 +75,6 @@ export default function SplashScreen() {
           await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
-
       if (finalStatus !== "granted") {
         Alert.alert("Notification permission not granted");
         return;
@@ -120,13 +119,15 @@ export default function SplashScreen() {
   };
   const fnGetToken = async () => {
     // navigation.replace("SalesLocationScreen");
+    // const userDataString =
+    // await AsyncStorage.getItem("USER_DATA");
+    // console.log(userDataString,"userDataString")
     try {
       await loadStoredLanguage();
       const tokenResponse = await fetchData(
         "app-employee-generate-token",
         "POST"
       );
-
       if (tokenResponse?.text === "Success") {
         dispatch(setTokens(tokenResponse));
         const siteDetailsData = await fetchData(
@@ -136,7 +137,7 @@ export default function SplashScreen() {
             Authorization: `${tokenResponse?.token}`,
           }
         );
-        // console.log("🔑 siteDetailsData Response:", siteDetailsData);
+        console.log("🔑 siteDetailsData Response:", siteDetailsData);
         if (siteDetailsData?.text === "Success") {
           if (siteDetailsData?.data?.[0]?.site_mode == "1") {
             navigation.replace("MaintainancePage");
@@ -191,7 +192,8 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Animated.Image
-        source={require("../../assets/images/amigo_logo.png")}
+        source={require("../../assets/splashscreen_logo.png")}
+        // source={require("../../assets/images/amigo_logo.png")}
         style={[styles.logo, { transform: [{ scale: scaleAnim }] }]}
         resizeMode="contain"
       />
@@ -205,10 +207,13 @@ export default function SplashScreen() {
 }
 const styles = StyleSheet.create({
   container: {
-    flex: 1, backgroundColor: COLORS.white, justifyContent: "center",
+    flex: 1, backgroundColor: COLORS.white,
     alignItems: "center",
   },
-  logo: { height: hp(45), }, loader: {
+  logo: {
+    height: hp(60),
+    marginTop: hp(4)
+  }, loader: {
     flexDirection: "row", marginTop: wp(10),
   },
   dot: {

@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -63,6 +64,7 @@ const GroupChatScreen = ({ route }) => {
 
   const [selectedMsg, setSelectedMsg] = useState(null);
   const [showActionModal, setShowActionModal] = useState(false);
+
 
   useEffect(() => {
     const showEvent =
@@ -129,40 +131,67 @@ const GroupChatScreen = ({ route }) => {
     setShowActionModal(false);
     setSelectedMsg(null);
   };
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+
+    try {
+      // API call or refresh logic
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // ✅ SAFE DELETE
   const deleteMsg = () => {
     if (!selectedMsg?.id) return;
-
     setMessages(prev =>
       prev.filter(m => m.id !== selectedMsg.id)
     );
-
     setShowActionModal(false);
     setSelectedMsg(null);
   };
-
-  // ✅ SAFE COPY
   const copyMsg = () => {
     if (!selectedMsg?.text) return;
-
     Clipboard.setString(selectedMsg.text);
-
     setShowActionModal(false);
     setSelectedMsg(null);
   };
-
   // ✅ SAFE EDIT
   const editMsg = () => {
     if (!selectedMsg?.id) return;
-
     setInputText(selectedMsg.text || "");
-
+    setTimeout(() => {
+      messageInputRef.current?.focus();
+    }, 100);
     setShowActionModal(false);
     setSelectedMsg(null);
   };
+  const [selectionMode, setSelectionMode] = useState(false);
 
-  // ✅ SWIPE REPLY (SAFE)
+  // ✅ TOGGLE SELECTION
+  const [selectedMessages, setSelectedMessages] = useState([]);
+
+  const toggleSelectMessage = (msg) => {
+    if (!msg?.id) return;
+
+    setSelectedMessages((prev) => {
+      const exists = prev.find((m) => m.id === msg.id);
+
+      let updated;
+      if (exists) {
+        updated = prev.filter((m) => m.id !== msg.id);
+      } else {
+        updated = [...prev, msg];
+      }
+
+      setSelectionMode(updated.length > 0);
+      return updated;
+    });
+  };
   const renderRightActions = (msg) => (
     <TouchableOpacity
       style={styles.swipeActionArea}
@@ -191,6 +220,7 @@ const GroupChatScreen = ({ route }) => {
 
     const showAvatar =
       !prev || prev?.sender?.id !== item?.sender?.id;
+    const isSelected = selectedMessages.find(m => m.id === item.id);
 
     return (
       <Swipeable
@@ -199,7 +229,6 @@ const GroupChatScreen = ({ route }) => {
         }}
         renderRightActions={renderRightActions}
         onSwipeableOpen={() => {
-          // Alert.alert('',JSON.stringify(item))
           setReplyTo(item);   // ✅ SET REPLY HERE
           setTimeout(() => {
             messageInputRef.current?.focus();
@@ -211,16 +240,21 @@ const GroupChatScreen = ({ route }) => {
       >
         <TouchableOpacity
           activeOpacity={0.9}
-          onLongPress={() => {
+          onLongPress={() => toggleSelectMessage(item)}
+          onPress={() => {
+            if (selectionMode) {
+              toggleSelectMessage(item);
+              return;
+            }
             setSelectedMsg(item);
             setShowActionModal(true);
           }}
         >
           <View style={[
             styles.messageRow,
-            isMe ? styles.rightAlign : styles.leftAlign
+            isMe ? styles.rightAlign : styles.leftAlign,
+            isSelected && { backgroundColor: COLORS?.primary + "55", borderRadius:wp(2),paddingVertical:wp(2) }
           ]}>
-
             {!isMe && showAvatar && (
               <Image
                 source={{ uri: item.sender?.avatar }}
@@ -263,33 +297,74 @@ const GroupChatScreen = ({ route }) => {
       </Swipeable>
     );
   };
+  const clearSelection = () => {
+    setSelectedMessages([]);
+    setSelectionMode(false);
+  };
+  // ✅ STAR (bulk)
+  const starSelected = () => {
+    const ids = selectedMessages.map(m => m.id);
 
+    setMessages(prev =>
+      prev.map(m =>
+        ids.includes(m.id) ? { ...m, starred: !m.starred } : m
+      )
+    );
+
+    clearSelection();
+  };
   return (
     <KeyboardAvoidingView style={{ flex: 1 }}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Ionicons
-            onPress={() => navigation.goBack()}
-            name="chevron-back"
-            size={wp(7)}
-          />
-          <Image source={{ uri: item?.avatar }} style={styles.headerAvatar} />
-          <View>
-            <Text style={styles.name}>{item?.name}</Text>
-          </View>
-        </View>
+        {selectionMode ? (
+          <View style={styles.selectionHeader}>
+            <TouchableOpacity onPress={clearSelection}>
+              <Ionicons name="close" size={24} />
+            </TouchableOpacity>
 
-        {/* CHAT */}
+            <Text style={{ flex: 1, textAlign: "center" }}>
+              {selectedMessages.length} selected
+            </Text>
+
+            <TouchableOpacity style={{ marginHorizontal: wp(2) }} onPress={starSelected}>
+              <Ionicons name="star-outline" size={wp(6)} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={{ marginHorizontal: wp(2) }} onPress={() => Alert.alert("Forward")}>
+              <Ionicons name="arrow-redo-outline" size={wp(6)} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.header}>
+            <Ionicons onPress={() => navigation.goBack()} name="chevron-back" size={wp(7)} />
+
+            <Pressable
+              style={{ flexDirection: "row" }}
+              onPress={() => navigation.navigate("GroupChatInfoScreen")}
+            >
+              <Image source={{ uri: item?.avatar }} style={styles.avatar} />
+              <View>
+                <Text style={styles.name}>{item?.name}</Text>
+                <Text style={styles.lastSeen}>last seen today</Text>
+              </View>
+            </Pressable>
+          </View>
+        )}
+
         <FlatList
           ref={flatListRef}
           data={messages}
           renderItem={renderItem}
           keyExtractor={(i) => i.id}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           contentContainerStyle={{
             padding: wp(3),
             paddingBottom: hp(12) + keyboardHeight,
           }}
         />
+
+
         <View style={[styles.inputContainer, { bottom: keyboardHeight }]}>
           {replyTo && (
             <View style={styles.replyBar}>
@@ -314,8 +389,6 @@ const GroupChatScreen = ({ route }) => {
             messageInputRef={messageInputRef}
           />
         </View>
-
-        {/* ACTION MODAL */}
         <Modal visible={showActionModal} transparent animationType="fade">
           <TouchableOpacity
             style={styles.modalOverlay}
@@ -392,58 +465,37 @@ const styles = StyleSheet.create({
   rightAlign: { justifyContent: "flex-end" },
 
   avatar: {
-    width: wp(7),
-    height: wp(7),
-    borderRadius: wp(3.5),
-    marginRight: wp(2),
+    width: wp(7), height: wp(7), borderRadius: wp(3.5), marginRight: wp(2),
+    borderWidth: wp(0.3), borderColor: COLORS?.primary
   },
   senderName: {
-    fontSize: wp(3),
-    fontWeight: "600",
-    color: "#444",
-    marginBottom: wp(1),
-  },
-  bubble: {
-    maxWidth: "75%",
-    padding: wp(3),
-    borderRadius: wp(4),
-  },
-
-  myBubble: {
+    fontSize: wp(3), fontWeight: "600", color: "#444", marginBottom: wp(1),
+  }, bubble: {
+    maxWidth: "75%", padding: wp(3), borderRadius: wp(4),
+  }, myBubble: {
     backgroundColor: "#DCF8C6",
     borderTopRightRadius: 0,
-  },
-
-  theirBubble: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 0,
-  },
-
-  messageText: {
-    fontSize: wp(3.4),
-    color: "#111",
-  },
-
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
+  }, theirBubble: { backgroundColor: "#fff", borderTopLeftRadius: 0, },
+  messageText: { fontSize: wp(3.4), color: "#111", }, metaRow: {
+    flexDirection: "row", justifyContent: "flex-end",
     marginTop: hp(0.5),
     gap: 4,
-  },
-
-  time: {
-    fontSize: wp(2.4),
-    color: "#666",
-  },
-
-  inputContainer: {
+  }, time: { fontSize: wp(2.4), color: "#666", }, inputContainer: {
     position: "absolute",
     left: 0,
-    right: 0,
-    backgroundColor: "#fff",
+    right: 0, backgroundColor: "#fff",
     borderTopWidth: 0.5,
     borderColor: "#ddd",
   },
+  selectionHeader: {
+    height: hp(8),
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: wp(3),
+    backgroundColor: "#fff",
+    justifyContent: "space-between",
+  },
+
 
   swipeActionArea: {
     justifyContent: "center",
@@ -480,10 +532,11 @@ const styles = StyleSheet.create({
   },
 
   replyBox: {
-    backgroundColor: "#ff0000",
     padding: wp(1.5),
-    borderRadius: wp(2),
+    borderRadius: wp(1.5),
     marginBottom: hp(0.5),
+    backgroundColor: COLORS?.primary + "10",
+    borderLeftWidth: wp(0.5), borderColor: COLORS?.primary
   },
 
   replyText: {
