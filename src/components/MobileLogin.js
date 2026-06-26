@@ -33,7 +33,7 @@ export default function MobileLogin() {
 
   useEffect(() => {
     if (__DEV__) {
-      setPhone("9943904056");
+      setPhone("8110933318");
     }
     loadTranslationsFromAPI("en");
   }, []);
@@ -63,7 +63,6 @@ export default function MobileLogin() {
       showToast(t("mobile_invalid"), "error");
       return;
     }
-
     setError("");
     setLoading(true);
 
@@ -71,7 +70,7 @@ export default function MobileLogin() {
       const mobileLData = await fetchData("app-employee-login", "POST", {
         phone_number: phone,
       });
-
+console?.log(mobileLData,"mobileLDatamobileLData")
       if (mobileLData?.text === "Success") {
         showToast(mobileLData?.message, "success");
         navigation.replace("OtpVerfication", mobileLData);

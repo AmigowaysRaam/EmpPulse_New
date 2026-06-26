@@ -1,3 +1,4 @@
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -8,7 +9,9 @@ import { useSelector } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
 import { wp } from "../../app/resources/dimensions";
 import { fetchData } from "./api/Api";
+
 const AllEmployeeModal = ({ visible, onClose }) => {
+
   const profileDetails = useSelector(
     (state) => state?.auth?.profileDetails?.data
   );
@@ -17,8 +20,12 @@ const AllEmployeeModal = ({ visible, onClose }) => {
   const [paginationLoading, setPaginationLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [employeeList, setEmployeeList] = useState([]);
+
+  const [selectedUsers, setselectedUsers] = useState([]);
+
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation();
 
   const onRefresh = async () => {
     try {
@@ -42,7 +49,6 @@ const AllEmployeeModal = ({ visible, onClose }) => {
       } else {
         setLoading(true);
       }
-
       const response = await fetchData("kas-employee-list", "POST", {
         companyId: profileDetails?.companyId,
         limit: 20,
@@ -88,7 +94,6 @@ const AllEmployeeModal = ({ visible, onClose }) => {
 
   const getEmployeeName = (employee) => {
     if (!employee) return "Unknown Employee";
-
     if (typeof employee?.employeeName === "string") {
       return employee.employeeName;
     }
@@ -104,16 +109,11 @@ const AllEmployeeModal = ({ visible, onClose }) => {
         "Unknown Employee"
       );
     }
-
     return "Unknown Employee";
   };
-
   const handleLoadMore = () => {
     if (
-      loading ||
-      paginationLoading ||
-      !hasMore
-    ) {
+      loading || paginationLoading || !hasMore) {
       return;
     }
     const nextPage = page + 1;
@@ -126,15 +126,31 @@ const AllEmployeeModal = ({ visible, onClose }) => {
       const response = await fetchData("chat-dm-create", "POST", {
         companyId: profileDetails?.companyId,
         contactId: props?._id,
-        userId: profileDetails?._id
+        userId: profileDetails?.id
       });
-      console?.log(response, "chat-dm-create")
+      // console?.log(response, "chat-dm-create")
+      if (response?.success) {
+        navigation?.navigate('ChatConvoScreen', { item: response?.conversation })
+        // console?.log(response, "chat-dm-create")
+        onClose();
+      }
     } catch (err) {
       console.log("Employee List Error:", err);
     } finally {
       setLoading(false);
     }
   }
+  const toggleSelection = (user) => {
+    setselectedUsers((prev) => {
+      const exists = prev.some((item) => item._id === user._id);
+
+      if (exists) {
+        return prev.filter((item) => item._id !== user._id);
+      }
+
+      return [...prev, user];
+    });
+  };
   const renderItem = ({ item }) => {
     const employeeName = getEmployeeName(item);
     const mobileNumber =
@@ -148,9 +164,23 @@ const AllEmployeeModal = ({ visible, onClose }) => {
         : item?.designation;
 
     return (
-      <TouchableOpacity activeOpacity={0.8} style={styles.card} onPress={() => {
-        handleStartChart(item)
-      }}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        style={[
+          styles.card,
+          // selectedUsers.includes(item._id) && styles.selectedCard,
+        ]}
+        // onLongPress={() => toggleSelection(item)}
+        onPress={() => {
+          // if (selectedUsers.length > 0) {
+          //   // Toggle selection if selection mode is active
+          //   toggleSelection(item);
+          // } else {
+          //   // Normal behavior
+          handleStartChart(item);
+          // }
+        }}
+      >
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
             {employeeName?.charAt(0)?.toUpperCase() || "E"}
@@ -158,7 +188,11 @@ const AllEmployeeModal = ({ visible, onClose }) => {
         </View>
 
         <View style={styles.info}>
-          <Text style={styles.name}>{employeeName}</Text>
+          <Text style={styles.name}>
+            {employeeName}
+            {/* {JSON.stringify(item)} */}
+
+          </Text>
 
           <Text style={styles.mobile}>
             {mobileNumber
@@ -175,6 +209,7 @@ const AllEmployeeModal = ({ visible, onClose }) => {
       </TouchableOpacity>
     );
   };
+
   const renderFooter = () => {
     if (!paginationLoading) return null;
 
@@ -259,7 +294,9 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "center", alignItems: "center",
   },
-  container: {
+  card: { padding: 16, backgroundColor: "#fff", }, selectedCard: {
+    backgroundColor: "#d0ebff",
+  }, container: {
     width: "93%", height: "80%", backgroundColor: "#F8FAFC", borderRadius: wp(2), paddingHorizontal: wp(3), paddingTop: wp(2),
     paddingBottom: wp(2),
   }, header: {
@@ -275,25 +312,20 @@ const styles = StyleSheet.create({
   }, clearText: {
     fontSize: 18, color: "#999", paddingLeft: 10, fontFamily: "Poppins_400Regular"
   }, countText: {
-    marginBottom: 10, fontSize: 13, color: "#6B7280", fontWeight: "500",
-    fontFamily: "Poppins_400Regular"
+    marginBottom: 10, fontSize: 13, color: "#6B7280", fontWeight: "500", fontFamily: "Poppins_400Regular"
   }, card: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", padding: wp(2),
-    borderRadius: 14, marginBottom: wp(1),
+    flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", padding: wp(2), borderRadius: 14, marginBottom: wp(1),
   }, avatar: {
-    width: wp(10), height: wp(10), borderRadius: wp(10), backgroundColor: COLORS?.primary,
-    justifyContent: "center",
+    width: wp(10), height: wp(10), borderRadius: wp(10), backgroundColor: COLORS?.primary, justifyContent: "center",
     alignItems: "center", marginRight: wp(3),
   }, avatarText: {
     color: "#FFFFFF", fontSize: wp(4.3), fontFamily: "Poppins_400Regular"
-  },
-  info: {
+  }, info: {
     flex: 1, fontFamily: "Poppins_400Regular"
   }, name: {
     fontSize: wp(3.5), fontWeight: "700", color: "#111827", textTransform: "capitalize", fontFamily: "Poppins_400Regular"
   }, mobile: {
     marginTop: 4, fontSize: wp(3.5), color: "#6B7280", fontWeight: "700",
-  }, designation: { marginTop: 4, fontSize: wp(3.5), color: "#4F46E5", },
-  loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center", },
+  }, designation: { marginTop: 4, fontSize: wp(3.5), color: "#4F46E5", }, loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center", },
   emptyContainer: { marginTop: 60, alignItems: "center", }, emptyText: { fontSize: 15, color: "#9CA3AF", },
 });

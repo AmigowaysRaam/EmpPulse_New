@@ -12,7 +12,9 @@ import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext";
 import { fetchData } from "./api/Api";
+
 export const PunchCard = React.memo(({ onLoading }) => {
+
   const { t } = useTranslation();
   const { showToast } = useToast();
   const [isPunchedIn, setIsPunchedIn] = useState(false);
@@ -20,11 +22,10 @@ export const PunchCard = React.memo(({ onLoading }) => {
   const [loading, setLoading] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [allowPunchIn, setallowPunchIn] = useState(false);
-
   const [loginTime, setloginTime] = useState(false);
   const [logoutTime, setlogoutTime] = useState(false);
-
   const navigation = useNavigation();
+
   useEffect(() => {
     const interval = setInterval(
       () => setCurrentTime(new Date()),
@@ -236,7 +237,7 @@ export const PunchCard = React.memo(({ onLoading }) => {
       <Pressable
         style={styles.attendanceCard}
         onPress={() =>
-          navigation.navigate("AttendanceLogScreen")
+          navigation.navigate("AttendanceLog")
         }
       >
         <View style={styles.attendanceContent}>
@@ -254,7 +255,6 @@ export const PunchCard = React.memo(({ onLoading }) => {
               View attendance activity history
             </Text>
           </View>
-
           <Icon
             name="chevron-right"
             type="material"
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
       height: 2,
     },
   },
-  
+
   attendanceContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#222",
   },
-  
+
   attendanceSubTitle: {
     fontSize: 12,
     color: "#666",

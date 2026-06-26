@@ -1,17 +1,17 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useRef } from "react";
 import {
-  Animated, Image,
-  Pressable, StyleSheet, Text,
-  View,
+  Animated, Image, Pressable, StyleSheet, Text, View,
 } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import { COLORS } from "../../app/resources/colors";
 import { wp } from "../../app/resources/dimensions";
-
 export default function ChatHeader({
   title = "",
   onBackPress,
   showBackButton = true,
+  rightIconName,
+  onRightIconPress,
 }) {
   const navigation = useNavigation();
   const backScale = useRef(new Animated.Value(1)).current;
@@ -39,21 +39,15 @@ export default function ChatHeader({
     ]).start(() => {
       if (onBackPress) {
         onBackPress();
-        // navigation.goBack();
       } else {
-        // navigation.goBack();
       }
     });
   };
-
-  /** -------- Interpolations -------- */
   const titleTranslate = titleAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [20, 0],
   });
-
   const titleOpacity = titleAnim;
-
   return (
     <View style={styles.shadowWrapper}>
       <View style={styles.container}>
@@ -74,7 +68,6 @@ export default function ChatHeader({
             </Animated.View>
           </Pressable>
         }
-        {/* Title */}
         <Animated.View
           style={[
             styles.titleContainer,
@@ -88,40 +81,32 @@ export default function ChatHeader({
             {title}
           </Text>
         </Animated.View>
+        {rightIconName && (
+          <Pressable onPress={onRightIconPress} hitSlop={10}>
+            <Ionicons
+              name={rightIconName}
+              size={wp(7)}
+              color={COLORS.primary}
+            />
+          </Pressable>
+        )}
       </View>
     </View>
   );
 }
 const styles = StyleSheet.create({
-  shadowWrapper: {
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-  },
-  container: {
+  shadowWrapper: { backgroundColor: "#fff", shadowColor: "#000", }, container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: wp(4),
-    height: wp(15),
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
+    paddingHorizontal: wp(4), height: wp(15), borderBottomWidth: 1, borderColor: "#ccc",
   },
   iconContainer: {
     padding: wp(1),
     marginRight: wp(3),
-  },
-  icon: {
-    width: wp(6),
-    height: wp(6),
-    resizeMode: "contain",
-  },
+  }, icon: { width: wp(6), height: wp(6), resizeMode: "contain", },
   titleContainer: {
-    flex: 1,
-    alignItems: "flex-start",
-  },
-  title: {
-    fontSize: wp(5.5),
-    color: COLORS.primary,
-    fontFamily: "Poppins_500Medium",
-    lineHeight: wp(8), textTransform: 'capitalize'
+    flex: 1, alignItems: "flex-start",
+  }, title: {
+    fontSize: wp(5.5), color: COLORS.primary, fontFamily: "Poppins_500Medium", lineHeight: wp(8), textTransform: 'capitalize'
   },
 });

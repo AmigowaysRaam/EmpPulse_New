@@ -2,8 +2,7 @@ import messaging from "@react-native-firebase/messaging";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  FlatList, Image,
-  RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View
+  FlatList, Image, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useSelector } from "react-redux";
@@ -14,6 +13,7 @@ import ChatHeader from "./ChatHeader";
 import { fetchData } from "./api/Api";
 
 const MessageChatList = () => {
+
   const [searchText, setSearchText] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [ShowAllEmp, setShowAllEmp] = useState(false);
@@ -23,6 +23,7 @@ const MessageChatList = () => {
   const profileDetails = useSelector(
     (state) => state?.auth?.profileDetails?.data
   );
+
   useFocusEffect(
     useCallback(() => {
       getGetMessageList();
@@ -30,16 +31,16 @@ const MessageChatList = () => {
       };
     }, [])
   );
-
   const getGetMessageList = async () => {
     try {
       const response = await fetchData("chat-dm-list", "POST", {
         companyId: profileDetails?.companyId,
-        userId: "6a15b4c2d8b58832cb004185",
+        userId: profileDetails?.id,
         limit: 100, page: 1,
-        search: "", usertype: "company",
+        search: "",
+        // usertype: "company",
       });
-
+      // Alert.alert('', JSON.stringify(response.conversations, null, 2))
       if (response?.success) {
         const formattedData = response.conversations.map((conversation) => {
           const otherMember = conversation.members.find(
@@ -49,7 +50,7 @@ const MessageChatList = () => {
             id: conversation._id,
             conversationId: conversation._id,
             type:
-              conversation.type === "group"
+              conversation.type == "group"
                 ? "Group"
                 : "Personal",
             name: otherMember?.name || "Unknown",
@@ -57,30 +58,24 @@ const MessageChatList = () => {
               otherMember?.designation ||
               otherMember?.role ||
               "Start Conversation",
-
             time: new Date(
               conversation.updatedAt
             ).toLocaleDateString(),
-
             unread: 0,
-
             avatar: otherMember?.photoUrl
               ? `YOUR_IMAGE_BASE_URL${otherMember.photoUrl}`
               : "https://i.pravatar.cc/150?img=1",
 
             online: otherMember?.online || false,
-
             memberData: otherMember,
           };
         });
-
         setChatData(formattedData);
       }
     } catch (err) {
       console.log("Employee List Error:", err);
     }
   };
-
   const onRefresh = async () => {
     setRefreshing(true);
     try {
@@ -93,9 +88,7 @@ const MessageChatList = () => {
     }
   };
   const filters = ["All", "Unread", "Groups"];
-
   useEffect(() => {
-    // Foreground notification
     const unsubscribeOnMessage = messaging().onMessage(async (notification) => {
       console.log("🔔 Foreground notification received");
       onRefresh()
@@ -111,11 +104,9 @@ const MessageChatList = () => {
     if (selectedFilter === "Unread") {
       data = data.filter((item) => item.unread > 0);
     }
-
     if (selectedFilter == "Groups") {
       data = data.filter((item) => item.type === "Group");
     }
-
     if (searchText.trim()) {
       data = data.filter(
         (item) =>
@@ -128,10 +119,11 @@ const MessageChatList = () => {
   // GroupChatScreen
   const renderItem = ({ item }) => (
     <TouchableOpacity
+
       activeOpacity={0.8}
       style={styles.chatItem}
       onPress={() =>
-        item?.type !== 'Group'
+        item?.type == 'Group'
           ? navigation?.navigate('GroupChatScreen', { item })
           : navigation?.navigate('ChatConvoScreen', { item })
       }
@@ -145,10 +137,8 @@ const MessageChatList = () => {
           }}
           style={styles.avatar}
         />
-
         {item.online && <View style={styles.onlineDot} />}
       </View>
-
       <View style={styles.chatContent}>
         <View style={styles.topRow}>
           <Text style={styles.name}>{item.name}</Text>
@@ -166,7 +156,6 @@ const MessageChatList = () => {
           <Text numberOfLines={1} style={styles.message}>
             {item.message}
           </Text>
-
           {item.unread > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>
@@ -202,16 +191,12 @@ const MessageChatList = () => {
   );
   return (
     <View style={styles.container}>
-      <ChatHeader title="Chats" showBackButton={false} />
-      {/* <Pressable
-        onPress={() => {
-          navigation?.navigate('AttendanceGroupScreen')        }
-        }
-        style={{
-          backgroundColor: "red", padding: wp(4)
-        }}>
-      
-      </Pressable> */}
+      <ChatHeader
+        title="Chat"
+        rightIconName="add-circle"
+        showBackButton={false}
+        onRightIconPress={() => navigation?.navigate("CreateGroupScreen")}
+      />
       <AllEmployeeModal
         visible={false}
       />
@@ -263,8 +248,8 @@ const MessageChatList = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[COLORS.primary]}       // Android
-            tintColor={COLORS.primary}      // iOS
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
           />
         }
       />

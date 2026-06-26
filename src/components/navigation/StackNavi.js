@@ -8,7 +8,8 @@ import AttendanceLog from '../AttendanceLog';
 import AttendanceLoginScreen from '../AtttendanceLogin';
 import ChangeMpin from '../ChangeMpin';
 import ChatConvoScreen from '../ChatConvoScreen';
-import ChatUserProfileScreen from '../ChatUserProfileScreen';
+import { default as ChatProfileScreen, default as ChatUserProfileScreen } from '../ChatUserProfileScreen';
+import CreateGroupScreen from '../CreateGroupScreen';
 import CreateMpin from '../CreateMpin';
 import CreateTask from '../CreateTask';
 import forgetotpVerfication from '../forgetotpVerfication';
@@ -91,6 +92,9 @@ export default function StackNavi() {
       <Stack.Screen name='MediaSharedScreen' component={MediaSharedScreen} />
       <Stack.Screen name='GroupChatInfoScreen' component={GroupChatInfoScreen} />
       <Stack.Screen name='AttendanceGroupScreen' component={AttendanceGroupScreen} />
+      <Stack.Screen name='ChatProfileScreen' component={ChatProfileScreen} />
+      <Stack.Screen name='CreateGroupScreen' component={CreateGroupScreen} />
+
       <Stack.Screen
         name="LeadListScreen"
         component={LeadListScreen}

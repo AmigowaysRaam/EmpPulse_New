@@ -6,6 +6,7 @@ import {
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import VersionUpgradeModal from "./VersionUpgradeModal";
+
 export default function Header({
   openMenu, headerL,
   openLanguageMenu,

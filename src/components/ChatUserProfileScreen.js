@@ -70,15 +70,14 @@ const ChatProfileScreen = () => {
 
   return (
     <>
-      <CommonHeader title="Profile" />
+      <CommonHeader title="Profile"
+        onBackPress={() => navigation?.goBack()}
+      />
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.headerBg} />
-
-        {/* PROFILE CARD */}
         <View style={styles.profileCard}>
           <Image source={{ uri: profile.avatar }} style={styles.avatar} />
-
           <Text style={styles.name}>{profile.name}</Text>
           <Text style={styles.phone}>{profile.phone}</Text>
           <Text style={styles.about}>
@@ -152,7 +151,6 @@ const ChatProfileScreen = () => {
                 ? "You will start receiving notifications again."
                 : "You will stop receiving notifications from this chat."}
             </Text>
-
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.btn, styles.cancelBtn]}
@@ -160,7 +158,6 @@ const ChatProfileScreen = () => {
               >
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={[styles.btn, styles.confirmBtn]}
                 onPress={muted ? handleUnmute : handleConfirmMute}
@@ -174,9 +171,7 @@ const ChatProfileScreen = () => {
     </>
   );
 };
-
 export default ChatProfileScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

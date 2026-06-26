@@ -1,4 +1,5 @@
 import { Audio } from "expo-av";
+import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import React, { useRef, useState } from "react";
@@ -8,7 +9,9 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
+
 const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
+
     const [showAttach, setShowAttach] = useState(false);
     const [recording, setRecording] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
@@ -18,15 +21,38 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
     const timerRef = useRef(null);
     const soundRef = useRef(null);
     const isTyping = inputText?.trim()?.length > 0;
+
     const processFile = async (uri) => {
         const newPath =
             FileSystem.documentDirectory + uri.split("/").pop();
-
         await FileSystem.copyAsync({
             from: uri,
             to: newPath,
         });
         return newPath;
+    };
+
+    const pickDocument = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: "*/*",
+                copyToCacheDirectory: true,
+            });
+            if (!result.canceled) {
+                const selectedFile = result.assets[0];
+
+                console.log("Name:", selectedFile.name);
+                console.log("URI:", selectedFile.uri);
+                console.log("Size:", selectedFile.size);
+                console.log("MimeType:", selectedFile.mimeType);
+                onSend?.({
+                    type: "file",
+                    uri: selectedFile.uri,
+                });
+            }
+        } catch (error) {
+            console.log(error);
+        }
     };
     const openCamera = async () => {
         try {
@@ -42,7 +68,6 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
 
             if (!result.canceled) {
                 const uri = result.assets[0].uri;
-
                 onSend?.({
                     type: "image",
                     uri,
@@ -65,7 +90,7 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
             }
 
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ImagePicker.MediaTypeOptions.All,
                 quality: 0.7,
             });
 
@@ -81,6 +106,13 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
             setShowAttach(false);
         } catch (e) {
             console.log(e);
+        }
+    };
+    const toggleRecording = async () => {
+        if (isRecording) {
+            await stopRecording();
+        } else {
+            await startRecording();
         }
     };
     const startRecording = async () => {
@@ -164,8 +196,6 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
             console.log(e);
         }
     };
-
-    // ---------------- SEND AUDIO ----------------
     const sendAudio = () => {
         if (!audioUri) return;
 
@@ -178,8 +208,6 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
         setRecordTime(0);
         setIsPlaying(false);
     };
-
-    // ---------------- REMOVE AUDIO ----------------
     const removeAudio = async () => {
         setAudioUri(null);
         setRecordTime(0);
@@ -190,13 +218,11 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
             soundRef.current = null;
         }
     };
-
     const formatTime = (sec) => {
         const m = Math.floor(sec / 60);
         const s = sec % 60;
         return `${m}:${s < 10 ? "0" : ""}${s}`;
     };
-
     return (
         <View style={styles.wrapper}>
             <Modal
@@ -226,14 +252,13 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
                             <Ionicons name="camera" size={wp(9)} />
                             <Text>Camera</Text>
                         </TouchableOpacity>
-                        {/* 
-    <TouchableOpacity
-        style={styles.attachItem}
-        onPress={openDocument}
-    >
-        <Ionicons name="document" size={wp(9)} />
-        <Text>Document</Text>
-    </TouchableOpacity> */}
+                        <TouchableOpacity
+                            style={styles.attachItem}
+                            onPress={pickDocument}
+                        >
+                            <Ionicons name="document" size={wp(9)} />
+                            <Text>Document</Text>
+                        </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
             </Modal>
@@ -284,20 +309,18 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
                     multiline
                     placeholderTextColor={'#555'}
                 />
-
                 {isTyping ? (
                     <TouchableOpacity onPress={onSend} style={styles.sendBtn}>
                         <Ionicons name="send" size={18} color="#fff" />
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity
-                        onPressIn={startRecording}
-                        onPressOut={stopRecording}
+                        onPress={toggleRecording}
                         style={styles.iconBtn}
                     >
                         <Ionicons
-                            name={isRecording ? "radio-button-on" : "mic"}
-                            size={22}
+                            name={isRecording ? "stop-circle" : "mic"}
+                            size={26}
                             color={isRecording ? "red" : "#111"}
                         />
                     </TouchableOpacity>
@@ -328,6 +351,7 @@ const styles = StyleSheet.create({
         borderRadius: wp(6),
         paddingHorizontal: wp(4),
         maxHeight: hp(10),
+        color: '#000'
     },
 
     iconBtn: {

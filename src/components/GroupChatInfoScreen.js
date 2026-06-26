@@ -114,7 +114,9 @@ const GroupChatInfoScreen = () => {
 
   return (
     <>
-      <CommonHeader title="Group Info" />
+      <CommonHeader title="Group Info"
+        onBackPress={() => navigation?.goBack()}
+      />
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* HEADER */}
