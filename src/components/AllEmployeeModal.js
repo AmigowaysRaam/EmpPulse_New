@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity,
@@ -128,7 +128,7 @@ const AllEmployeeModal = ({ visible, onClose }) => {
         contactId: props?._id,
         userId: profileDetails?.id
       });
-      // console?.log(response, "chat-dm-create")
+      console?.log(response, "chat-dm-create")
       if (response?.success) {
         navigation?.navigate('ChatConvoScreen', { item: response?.conversation })
         // console?.log(response, "chat-dm-create")
@@ -291,7 +291,7 @@ const AllEmployeeModal = ({ visible, onClose }) => {
 export default AllEmployeeModal;
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1, backgroundColor: "rgba(0,0,0,0.45)",
+    flex: 1, backgroundColor: "rgba(0,0,0,0.90)",
     justifyContent: "center", alignItems: "center",
   },
   card: { padding: 16, backgroundColor: "#fff", }, selectedCard: {

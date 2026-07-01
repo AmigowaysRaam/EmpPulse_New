@@ -2,7 +2,7 @@
   "expo": {
     "name": "EmpPulse",
     "slug": "emppulse",
-    "version": "1.0.7",
+    "version": "1.0.9",
     "orientation": "portrait",
     "icon": "./assets/images/empLogo.png",
     "scheme": "emppulse",
@@ -30,9 +30,8 @@
     // },
     "android": {
       "adaptiveIcon": {
-    "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/images/empLogo.png",
-    
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/empLogo.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -52,9 +51,7 @@
       "output": "static",
       "favicon": "./assets/images/empLogo.png"
     },
-    "plugins": [
-      "expo-router"
-    ],
+    "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

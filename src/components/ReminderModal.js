@@ -1,5 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Keyboard,
     KeyboardAvoidingView,
@@ -71,6 +71,7 @@ export default function ReminderModal({ visible, onClose, onSave }) {
             title,
             description,
             time: selectedDate.getTime(),
+            date: selectedDate.toISOString().split("T")[0], // YYYY-MM-DD format
         });
 
         reset();

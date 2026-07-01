@@ -1,12 +1,18 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Keyboard,
-  KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity,
-  View
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import SmoothPinCodeInput from "react-native-smooth-pincode-input";
 import { COLORS } from "../../app/resources/colors";
@@ -41,6 +47,12 @@ export default function OtpVerfication({ route }) {
   }, []);
 
   /* OTP timer */
+
+  const handleSwitchAccount = async () => {
+    await AsyncStorage.multiRemove(["USER_DATA", "USER_ID", "token"]);
+    navigation.replace("MobileLogin"); // go to normal login screen
+  };
+
   useEffect(() => {
     if (timer === 0) {
       setCanResend(true);
@@ -75,7 +87,7 @@ export default function OtpVerfication({ route }) {
     setError("");
     showToast(t("Otp_verified"), "success");
     // Alert.alert(t("Otp_verified"), JSON.stringify(data,null,2));
-    console.log("User Data:", JSON.stringify(data,null,2));
+    console.log("User Data:", JSON.stringify(data, null, 2));
     if (data[0]?.mpin_status && data[0]?.mpin_status === "0") {
       navigation.replace("CreateMpin", { data: data[0] });
     } else {
@@ -125,9 +137,7 @@ export default function OtpVerfication({ route }) {
           <LogoAnimated />
           <View style={{ width: wp(80), marginBottom: wp(4) }}>
             <Text style={styles.title}>{t("otp_verification")}</Text>
-            {__DEV__ && (
-              <Text style={styles.subtitle}>{otp}</Text>
-            )}
+            {__DEV__ && <Text style={styles.subtitle}>{otp}</Text>}
             <Text style={styles.subtitle}>
               {`${t("please_enter_otp")} +91 ${data[0]?.phone_number}`}
             </Text>
@@ -155,10 +165,7 @@ export default function OtpVerfication({ route }) {
               password={true}
               autoFocus
               cellStyle={styles.otpInput}
-              cellStyleFocused={[
-                styles.otpInput,
-                styles.otpInputFocused,
-              ]}
+              cellStyleFocused={[styles.otpInput, styles.otpInputFocused]}
               onFulfill={handleVerifyOtp}
             />
           </Pressable>
@@ -170,10 +177,7 @@ export default function OtpVerfication({ route }) {
               <TouchableOpacity
                 onPress={handleResendOtp}
                 disabled={resendLoading}
-                style={[
-                  styles.resendBtn,
-                  { opacity: resendLoading ? 0.6 : 1 },
-                ]}
+                style={[styles.resendBtn, { opacity: resendLoading ? 0.6 : 1 }]}
               >
                 {resendLoading ? (
                   <ActivityIndicator color={COLORS.primary} />
@@ -187,6 +191,17 @@ export default function OtpVerfication({ route }) {
               </Text>
             )}
           </View>
+          <TouchableOpacity
+            onPress={handleSwitchAccount}
+            disabled={resendLoading}
+            style={[{ opacity: resendLoading ? 0.6 : 1, marginTop: hp(3) }]}
+          >
+            <Text
+              style={[styles.resendText, { textDecorationLine: "underline" }]}
+            >
+              {t("login_with_another_account")}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -220,7 +235,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9F9F9",
     color: COLORS.primary,
     marginHorizontal: wp(2),
-    marginRight: wp(4), lineHeight: hp(6),
+    marginRight: wp(4),
+    lineHeight: hp(6),
   },
   otpInputFocused: {
     borderWidth: 2,

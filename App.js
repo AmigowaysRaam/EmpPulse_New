@@ -31,6 +31,7 @@ import { ToastProvider } from "./constants/ToastContext";
 import NoInternetScreen from "./NoInternetScreen";
 import StackNavi from "./src/components/navigation/StackNavi";
 import { store } from "./src/components/store/store";
+
 export const navigationRef = createNavigationContainerRef();
 export function navigate(name, params) {
   if (navigationRef.isReady()) {

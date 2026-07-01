@@ -1,90 +1,125 @@
 import { useNavigation } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    FlatList,
-    KeyboardAvoidingView, Modal, Platform, RefreshControl, StyleSheet,
-    Text, TouchableOpacity, View
+    FlatList, KeyboardAvoidingView, Modal, Platform, RefreshControl, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
+import { useSelector } from "react-redux";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
 import { useToast } from "../../constants/ToastContext";
 import CommonHeader from "./CommonHeader";
 import ReminderModal from "./ReminderModal";
+import { fetchData } from "./api/Api";
 
 export default function Remainder() {
+    
     const navigation = useNavigation();
     const { showToast } = useToast();
-
     const [tab, setTab] = useState("upcoming");
     const [modalVisible, setModalVisible] = useState(false);
     const [confirmVisible, setConfirmVisible] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [refreshing, setRefreshing] = useState(false);
-
-    // ✅ NEW: track expanded descriptions
     const [expandedIds, setExpandedIds] = useState({});
+    const [reminders, setReminders] = useState([]);
+ 
+    useEffect(() => {
+    if (profileDetails?.id) {
+        fetchReminders(tab);
+    }
+}, [tab, profileDetails]);
 
-    const [reminders, setReminders] = useState([
-        {
-            id: "1",
-            title: "Doctor Appointment",
-            description: "Visit doctor at 6 PM.",
-            time: Date.now() + 1000000,
-            completed: false,
-        },
-        {
-            id: "2",
-            title: "Meeting",
-            description: "Project meeting at 10 AM. Agenda includes sprint planning, task review, and backlog discussion.",
-            time: Date.now() - 1000000,
-            completed: false,
-        },
-    ]);
+const filteredData = useMemo(() => {
+  return reminders.filter((item) => {
+    if (tab === "upcoming") {
+      return item.status === "active";
+    }
+    return item.status === "completed";
+  });
+}, [tab, reminders]);
 
-    // Filter list
-    const filteredData = useMemo(() => {
-        return reminders.filter((i) =>
-            tab === "upcoming" ? !i.completed : i.completed
+    const formatTime = (timestamp) => {
+            const date = new Date(timestamp);
+            const hours = String(date.getHours()).padStart(2, "0");
+            const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${hours}:${minutes}`;
+};
+
+  const profileDetails = useSelector(
+    (state) => state?.auth?.profileDetails?.data
+  );
+
+const fetchReminders = async (type = "upcoming") => {
+    try {
+        setRefreshing(true);
+        const body = {
+            employeeId: profileDetails?.id,
+            page: 1,
+            limit: 100,
+            search: "",
+            type: type,
+        };
+
+        console.log("Reminder Request", body);
+
+        const response = await fetchData(
+            "reminders-list",
+            "POST",
+            body
         );
-    }, [tab, reminders]);
 
-    // Add reminder
-    const addReminder = (item) => {
-        setReminders((prev) => [
-            {
-                ...item,
-                id: Date.now().toString(),
-                completed: false,
-            },
-            ...prev,
-        ]);
-    };
+        if (response?.success) {
+            const reminderData = response.reminders.map((item) => ({
+                id: item._id,
+                title: item.title,
+                description: item.description,
+                date: item.date,
+                time: item.time,
+                scheduledAt: item.scheduledAt,
+                status: item.status,
+            }));
+            setReminders(reminderData);
+        } else {
+            setReminders([]);
+        }
+    } catch (error) {
+        console.log("Error fetching reminders:", error);
+        setReminders([]);
+    } finally {
+        setRefreshing(false);
+        setModalVisible(false);
+        setConfirmVisible(false);
+    }
+};
 
     const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        setTimeout(() => {
-            setRefreshing(false);
-        }, 800);
+             fetchReminders(tab);
     }, []);
-
     const askComplete = (item) => {
         setSelectedItem(item);
         setConfirmVisible(true);
     };
+    const markComplete = async () => {
 
-    const markComplete = () => {
-        setReminders((prev) =>
-            prev.map((r) =>
-                r.id === selectedItem?.id
-                    ? { ...r, completed: true }
-                    : r
-            )
-        );
-        setConfirmVisible(false);
-        setSelectedItem(null);
+     try {
+    const response = await fetchData("reminders-update-status", "POST", {
+      employeeId: profileDetails?.id,
+      id: selectedItem?.id,
+      status: "inactive",
+    });
+    // console.log(response);
+    if (response?.success) {
         showToast("Marked Successfully", "success");
+        fetchReminders(tab);
+    }
+  } catch (error) {
+    console.log(error);
+  } finally {
+     setConfirmVisible(false);
+        setSelectedItem(null);
+  }
     };
-
     // ✅ NEW: toggle expand
     const toggleExpand = (id) => {
         setExpandedIds((prev) => ({
@@ -93,6 +128,26 @@ export default function Remainder() {
         }));
     };
 
+const addReminder = async (item) => {
+  try {
+    const response = await fetchData("reminders-create", "POST", {
+      employeeId: profileDetails?.id,
+      title: item.title,
+      description: item.description,
+      date: item.date,
+      time: formatTime(item.time),
+    });
+    // console.log(response);
+    if (response?.success) {
+      showToast("Reminder Added", "success");
+      fetchReminders(tab);
+    }
+  } catch (error) {
+    console.log(error);
+  } finally {
+    setRefreshing(false);
+  }
+};
     // Render item
     const renderItem = ({ item }) => {
         const isExpanded = expandedIds[item.id];
@@ -102,13 +157,9 @@ export default function Remainder() {
                 <Text numberOfLines={1} style={styles.title}>
                     {item.title}
                 </Text>
-
-                {/* ✅ DESCRIPTION WITH 3-LINE LIMIT */}
                 <Text numberOfLines={isExpanded ? undefined : 3}>
                     {item.description}
                 </Text>
-
-                {/* ✅ SHOW MORE / LESS */}
                 {item.description?.length > 80 && (
                     <TouchableOpacity onPress={() => toggleExpand(item.id)}>
                         <Text style={{ color: COLORS.primary || "#007AFF", marginTop: 5 }}>
@@ -116,10 +167,10 @@ export default function Remainder() {
                         </Text>
                     </TouchableOpacity>
                 )}
-
-                <Text>{new Date(item.time).toLocaleString()}</Text>
-
-                {!item.completed ? (
+                    <Text style={{ marginTop: 5, color: "#666" }}>
+                    {item.date} {item.time}
+            </Text>
+                {tab === "upcoming"? (
                     <TouchableOpacity
                         style={styles.completeBtn}
                         onPress={() => askComplete(item)}
@@ -150,7 +201,9 @@ export default function Remainder() {
                     {["upcoming", "past"].map((t) => (
                         <TouchableOpacity
                             key={t}
-                            onPress={() => setTab(t)}
+                         onPress={() => {
+    setTab(t);
+}}
                             style={[
                                 styles.tab,
                                 tab === t && styles.activeTab,
@@ -169,9 +222,9 @@ export default function Remainder() {
                 </View>
 
                 <FlatList
-                    data={filteredData}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderItem}
+                    data={reminders}
+                    keyExtractor={(item) => item.id.toString()}                
+                   renderItem={renderItem}
                     contentContainerStyle={{
                         padding: wp(4),
                         paddingBottom: 100,

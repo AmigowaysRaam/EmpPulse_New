@@ -1,546 +1,480 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { useEffect, useRef, useState } from "react";
+
+  import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Clipboard,
-  FlatList,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+  Alert, Clipboard, FlatList, Image, ImageBackground, Keyboard, KeyboardAvoidingView,
+  Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
-
-import { Swipeable } from "react-native-gesture-handler";
 import Ionicons from "react-native-vector-icons/Ionicons";
-
+import { useSelector } from "react-redux";
+import { io } from "socket.io-client";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
+import { fetchData } from "./api/Api";
 import ChatInputBar from "./ChatInput";
+import ChatMessageItem from "./ChatMessageItem";
+import DeleteMessagesButton from "./DeleteButton";
 
-const GroupChatScreen = ({ route }) => {
-  const { item } = route?.params || {};
-  const navigation = useNavigation();
+  const GroupChatScreen = ({ route }) => {
 
-  const flatListRef = useRef();
-  const swipeRefs = useRef(new Map());
-  const messageInputRef = useRef(null);
-
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-
-  const [messages, setMessages] = useState([
-    {
-      id: "1",
-      text: "Hi, how are you?",
-      sender: {
-        id: "u1",
-        name: "Arun",
-        avatar: "https://i.pravatar.cc/150?img=1",
-      },
-      time: "10:30 AM",
-      reaction: null,
-      starred: false,
-    },
-    {
-      id: "2",
-      text: "I'm good, what about you?",
-      sender: {
-        id: "me",
-        name: "You",
-        avatar: "https://i.pravatar.cc/150?img=2",
-      },
-      time: "10:31 AM",
-      reaction: null,
-      starred: false,
-    },
-  ]);
-
-  const [inputText, setInputText] = useState("");
-  const [replyTo, setReplyTo] = useState(null);
-
-  const [selectedMsg, setSelectedMsg] = useState(null);
-  const [showActionModal, setShowActionModal] = useState(false);
-
-
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-    });
-
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  // ✅ SAFE SEND MESSAGE
-  const sendMessage = () => {
-    if (!inputText.trim()) return;
-
-    const newMsg = {
-      id: Date.now().toString(),
-      text: inputText,
-      sender: {
-        id: "me",
-        name: "You",
-        avatar: "https://i.pravatar.cc/150?img=2",
-      },
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      reaction: null,
-      starred: false,
-      replyTo: replyTo || null,
-    };
-
-    setMessages(prev => [...prev, newMsg]);
-    setInputText("");
-    setReplyTo(null);
-
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
-
-  // ✅ SAFE STAR
-  const toggleStar = () => {
-    if (!selectedMsg?.id) return;
-
-    setMessages(prev =>
-      prev.map(m =>
-        m.id === selectedMsg.id
-          ? { ...m, starred: !m.starred }
-          : m
-      )
+    const { item } = route?.params || {};
+    const navigation = useNavigation();
+    const flatListRef = useRef();
+    const swipeRefs = useRef(new Map());
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedMessages, setSelectedMessages] = useState([]);
+    const [refreshing, setRefreshing] = useState(false);
+    const [keyboardOpen, setKeyboardOpen] = useState(false);
+    const profileDetails = useSelector(
+      (state) => state?.auth?.profileDetails?.data
     );
 
-    setShowActionModal(false);
-    setSelectedMsg(null);
-  };
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-
-    try {
-      // API call or refresh logic
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  // ✅ SAFE DELETE
-  const deleteMsg = () => {
-    if (!selectedMsg?.id) return;
-    setMessages(prev =>
-      prev.filter(m => m.id !== selectedMsg.id)
-    );
-    setShowActionModal(false);
-    setSelectedMsg(null);
-  };
-  const copyMsg = () => {
-    if (!selectedMsg?.text) return;
-    Clipboard.setString(selectedMsg.text);
-    setShowActionModal(false);
-    setSelectedMsg(null);
-  };
-  // ✅ SAFE EDIT
-  const editMsg = () => {
-    if (!selectedMsg?.id) return;
-    setInputText(selectedMsg.text || "");
-    setTimeout(() => {
-      messageInputRef.current?.focus();
-    }, 100);
-    setShowActionModal(false);
-    setSelectedMsg(null);
-  };
-  const [selectionMode, setSelectionMode] = useState(false);
-
-  // ✅ TOGGLE SELECTION
-  const [selectedMessages, setSelectedMessages] = useState([]);
-
-  const toggleSelectMessage = (msg) => {
-    if (!msg?.id) return;
-
-    setSelectedMessages((prev) => {
-      const exists = prev.find((m) => m.id === msg.id);
-
-      let updated;
-      if (exists) {
-        updated = prev.filter((m) => m.id !== msg.id);
-      } else {
-        updated = [...prev, msg];
-      }
-
-      setSelectionMode(updated.length > 0);
-      return updated;
-    });
-  };
-  const renderRightActions = (msg) => (
-    <TouchableOpacity
-      style={styles.swipeActionArea}
-      onPress={() => {
-        if (!msg) return;
-
-        setReplyTo(msg);
-        setTimeout(() => {
-          messageInputRef.current?.focus();
-        }, 100);
-
-        const ref = swipeRefs.current.get(msg.id);
-        ref?.close();
-      }}
-    >
-      <Text style={styles.swipeHint}>Reply</Text>
-    </TouchableOpacity>
+  const socketRef = useRef(null);
+  const initialized = useRef(false);
+  
+  useFocusEffect(
+    useCallback(() => {
+      const socket = io("https://amigoways.org", {
+        path: "/socket.io",
+        transports: ["polling", "websocket"],
+        reconnection: true,
+      });
+  
+      socketRef.current = socket;
+  
+      socket.on("connect", () => {
+        console.log("✅ Connected:", socket.id);
+      });
+  
+      socket.on("receive_message", (data) => {
+        console.log("📩 Message:", data);
+        getMessagesList();
+      });
+  
+      socket.on("disconnect", (reason) => {
+        console.log("🔌 Disconnected:", reason);
+      });
+  
+      return () => {
+        console.log("🚪 Screen unfocused → disconnect socket");
+        socket.disconnect();
+        socketRef.current = null;
+      };
+    }, [])
   );
+    useEffect(() => {
+      const showSub = Keyboard.addListener(
+        Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+        (e) => {
+          setKeyboardOpen(true);
+          setKeyboardHeight(e.endCoordinates.height);
+        }
+      );
+      const hideSub = Keyboard.addListener(
+        Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+        () => {
+          setKeyboardOpen(false);
+          setKeyboardHeight(0);
+        }
+      );
+      return () => {
+        showSub.remove();
+        hideSub.remove();
+      };
+    }, []);
+    useEffect(() => {
+      getMessagesList();
+    }, []);
 
-  // ✅ RENDER MESSAGE (FULL SAFE)
-  const renderItem = ({ item, index }) => {
-    if (!item?.sender) return null;
-
-    const isMe = item.sender.id === "me";
-    const prev = messages[index - 1];
-
-    const showAvatar =
-      !prev || prev?.sender?.id !== item?.sender?.id;
-    const isSelected = selectedMessages.find(m => m.id === item.id);
-
-    return (
-      <Swipeable
-        ref={(ref) => {
-          if (ref) swipeRefs.current.set(item.id, ref);
-        }}
-        renderRightActions={renderRightActions}
-        onSwipeableOpen={() => {
-          setReplyTo(item);   // ✅ SET REPLY HERE
+  const emojis = ["❤️", "😂", "😮", "😢"];
+    const getMessagesList = async () => {
+      try {
+        const response = await fetchData("chat-messages", "POST", {
+          companyId: profileDetails?.companyId,
+          userId: profileDetails?.id,
+          limit: 100, page: 1, search: "",
+          conversationId: item?.conversationId
+        });
+        if (response?.success) {
+          console.log("GROUP MESSAGES RESPONSE =>", response);
+          const formattedMessages = response.messages.map((msg) => ({
+            id: msg._id,
+            text: msg.text || "",
+            sender:
+              msg.status === "sent"
+                ? "me"
+                : "them",
+            senderName: msg.senderName,
+            time: new Date(msg.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            reaction: null,
+            starred: false,
+            replyTo: null,
+            attachment: msg.attachment,
+            status: msg.status,
+          }));
+          setMessages(formattedMessages);
           setTimeout(() => {
-            messageInputRef.current?.focus();
-          }, 100);
-
-          const ref = swipeRefs.current.get(item.id);
-          ref?.close();
-        }}
-      >
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onLongPress={() => toggleSelectMessage(item)}
-          onPress={() => {
-            if (selectionMode) {
-              toggleSelectMessage(item);
-              return;
-            }
-            setSelectedMsg(item);
-            setShowActionModal(true);
-          }}
-        >
-          <View style={[
-            styles.messageRow,
-            isMe ? styles.rightAlign : styles.leftAlign,
-            isSelected && { backgroundColor: COLORS?.primary + "55", borderRadius:wp(2),paddingVertical:wp(2) }
-          ]}>
-            {!isMe && showAvatar && (
-              <Image
-                source={{ uri: item.sender?.avatar }}
-                style={styles.avatar}
-              />
-            )}
-
-            <View style={[
-              styles.bubble,
-              isMe ? styles.myBubble : styles.theirBubble
-            ]}>
-
-              {!isMe && showAvatar && (
-                <Text style={styles.senderName}>
-                  {item.sender?.name}
-                </Text>
-              )}
-
-              {item.replyTo?.text && (
-                <View style={styles.replyBox}>
-                  <Text numberOfLines={1} style={styles.replyText}>
-                    {item.replyTo.text}
-                  </Text>
-                </View>
-              )}
-              <Text style={styles.messageText}>{item.text}</Text>
-              <View style={styles.metaRow}>
-                <Text style={styles.time}>{item.time}</Text>
-                {item.starred && <Text>⭐</Text>}
-              </View>
-            </View>
-            {isMe && showAvatar && (
-              <Image
-                source={{ uri: item.sender?.avatar }}
-                style={styles.avatar}
-              />
-            )}
-          </View>
-        </TouchableOpacity>
-      </Swipeable>
+            flatListRef.current?.scrollToEnd({
+              animated: false,
+            });
+          }, 200);
+        }
+      } catch (err) {
+        console.log("Message Error", err);
+      }
+    };
+    const isSent = selectedMsg?.status === "sent";
+    const [messages, setMessages] = useState([]);
+    const [inputText, setInputText] = useState("");
+    const [replyTo, setReplyTo] = useState(null);
+    const [activeReactionMsg, setActiveReactionMsg] = useState(null);
+    const messageInputRef = useRef(null);
+    const toggleSelectMessage = (msg) => {
+      if (!msg?.id) return;
+      setSelectedMessages((prev) => {
+        const exists = prev.find((m) => m.id === msg.id);
+        let updated;
+        if (exists) {
+          updated = prev.filter((m) => m.id !== msg.id);
+        } else {
+          updated = [...prev, msg];
+        }
+        setSelectionMode(updated.length > 0);
+        return updated;
+      });
+    };
+  
+    const [selectedMsg, setSelectedMsg] = useState(null);
+    const [showActionModal, setShowActionModal] = useState(false);
+    const onRefresh = async () => {
+      setRefreshing(true);
+      try {
+        getMessagesList();
+        // API call or refresh logic
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setRefreshing(false);
+      }
+    };
+  
+    const sendMessage = async (data) => {
+      try {
+        const text = inputText.trim();
+        if (!text && !attachment) return;
+        const payload = {
+          companyId: profileDetails?.companyId,
+          userId: profileDetails?.id,
+          conversationId: item?.conversationId,
+          text,
+          // type: attachment ? attachment.type : "text",
+          // attachment,
+          // replyMessageId: localMessage.replyTo?.id || null,
+        };
+        const response = await fetchData(
+          "chat-send-message", "POST", payload
+        );
+        console.log("SEND RESPONSE =>", response);
+        if (response?.success) {
+          getMessagesList()
+          setInputText('')
+          setReplyTo(null)
+        } else {
+          Alert.alert("Error", response?.message || "Failed to send message");
+        }
+      } catch (error) {
+        console.log("SEND ERROR", error);
+        Alert.alert("Error", "Unable to send message.");
+      }
+      finally {
+        setInputText('')
+      }
+    };
+  
+    const addReaction = (emoji) => {
+      if (!activeReactionMsg) return;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === activeReactionMsg.id
+            ? { ...m, reaction: emoji }
+            : m
+        )
+      );
+      setActiveReactionMsg(null);
+    };
+  
+    const toggleStar = () => {
+      if (!selectedMsg?.id) return;
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === selectedMsg.id
+            ? { ...m, starred: !m.starred }
+            : m
+        )
+      );
+      setShowActionModal(false);
+      setSelectedMsg(null);
+    };
+  
+    const deleteMsg = () => {
+      if (!selectedMsg?.id) return;
+      setMessages(prev => prev.filter(m => m.id !== selectedMsg.id));
+      setShowActionModal(false);
+      setSelectedMsg(null);
+    };
+  
+    const copyMsg = () => {
+      if (!selectedMsg?.text) return;
+      Clipboard.setString(selectedMsg.text);
+      setShowActionModal(false);
+      setSelectedMsg(null);
+    };
+  
+    const editMsg = () => {
+      if (!selectedMsg?.id) return;
+  
+      setInputText(selectedMsg.text);
+  
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === selectedMsg.id
+            ? { ...m, text: selectedMsg.text, isEditing: true }
+            : m
+        )
+      );
+      setShowActionModal(false);
+      setSelectedMsg(null);
+    };
+    const renderItem = ({ item }) => (
+      <ChatMessageItem
+        item={item}
+        selectionMode={selectionMode}
+        selectedMessages={selectedMessages}
+        toggleSelectMessage={toggleSelectMessage}
+        setSelectedMsg={setSelectedMsg}
+        setShowActionModal={setShowActionModal}
+        setReplyTo={setReplyTo}
+        swipeRefs={swipeRefs}
+        messageInputRef={messageInputRef}
+      />
     );
-  };
-  const clearSelection = () => {
-    setSelectedMessages([]);
-    setSelectionMode(false);
-  };
-  // ✅ STAR (bulk)
-  const starSelected = () => {
-    const ids = selectedMessages.map(m => m.id);
-
-    setMessages(prev =>
-      prev.map(m =>
-        ids.includes(m.id) ? { ...m, starred: !m.starred } : m
-      )
-    );
-
-    clearSelection();
-  };
-  return (
-    <KeyboardAvoidingView style={{ flex: 1 }}>
-      <View style={styles.container}>
-        {selectionMode ? (
-          <View style={styles.selectionHeader}>
-            <TouchableOpacity onPress={clearSelection}>
-              <Ionicons name="close" size={24} />
-            </TouchableOpacity>
-
-            <Text style={{ flex: 1, textAlign: "center" }}>
-              {selectedMessages.length} selected
-            </Text>
-
-            <TouchableOpacity style={{ marginHorizontal: wp(2) }} onPress={starSelected}>
-              <Ionicons name="star-outline" size={wp(6)} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={{ marginHorizontal: wp(2) }} onPress={() => Alert.alert("Forward")}>
-              <Ionicons name="arrow-redo-outline" size={wp(6)} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.header}>
-            <Ionicons onPress={() => navigation.goBack()} name="chevron-back" size={wp(7)} />
-
-            <Pressable
-              style={{ flexDirection: "row" }}
-              onPress={() => navigation.navigate("GroupChatInfoScreen")}
-            >
-              <Image source={{ uri: item?.avatar }} style={styles.avatar} />
-              <View>
-                <Text style={styles.name}>{item?.name}</Text>
-                <Text style={styles.lastSeen}>last seen today</Text>
-              </View>
-            </Pressable>
-          </View>
-        )}
-
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderItem}
-          keyExtractor={(i) => i.id}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          contentContainerStyle={{
-            padding: wp(3),
-            paddingBottom: hp(12) + keyboardHeight,
-          }}
-        />
-
-
-        <View style={[styles.inputContainer, { bottom: keyboardHeight }]}>
-          {replyTo && (
-            <View style={styles.replyBar}>
-              <View style={styles.replyBarLine} />
-
-              <View style={{ flex: 1 }}>
-                {/* <Text style={styles.replyBarTitle}>Replying to</Text> */}
-                <Text numberOfLines={1} style={styles.replyBarText}>
-                  {replyTo.text}
-                </Text>
-              </View>
-
-              <TouchableOpacity onPress={() => setReplyTo(null)}>
-                <Ionicons name="close" size={20} />
+    const clearSelection = () => {
+      setSelectedMessages([]);
+      setSelectionMode(false);
+    };
+  
+    const starSelected = () => {
+      const ids = selectedMessages.map(m => m.id);
+      setMessages(prev =>
+        prev.map(m =>
+          ids.includes(m.id) ? { ...m, starred: !m.starred } : m
+        )
+      );
+  
+      clearSelection();
+    };
+    return (
+      <KeyboardAvoidingView style={{ flex: 1 }}>
+        <View style={styles.container}>
+          {selectionMode ? (
+            <View style={styles.selectionHeader}>
+              <TouchableOpacity onPress={clearSelection}>
+                <Ionicons name="close" size={24} />
               </TouchableOpacity>
+              <Text style={{ flex: 1, textAlign: "center" }}>
+                {selectedMessages.length} selected
+              </Text>
+              <TouchableOpacity style={{ marginHorizontal: wp(2) }} onPress={starSelected}>
+                <Ionicons name="star-outline" size={wp(6)} />
+              </TouchableOpacity>
+              <TouchableOpacity style={{ marginHorizontal: wp(2) }} onPress={() => navigation.navigate("ForwardScreen", { messages: selectedMessages })}>
+                <Ionicons name="arrow-redo-outline" size={wp(6)} />
+              </TouchableOpacity>
+                <DeleteMessagesButton selectedMessages={selectedMessages} />
+            </View>
+          ) : (
+            <View style={styles.header}>
+              <Ionicons onPress={() => navigation.goBack()} name="chevron-back" size={wp(7)} />
+              <Pressable
+                style={{ flexDirection: "row", flex: 1 }}
+                onPress={() => navigation.navigate("ChatProfileScreen")}
+              >
+                <Image source={{ uri: item?.avatar }} style={styles.avatar} />
+                <View>
+                  <Text style={styles.name}>{item?.name}</Text>
+                  <Text style={styles.lastSeen}>last seen today</Text>
+                </View>
+              </Pressable>
             </View>
           )}
-          <ChatInputBar
-            inputText={inputText}
-            setInputText={setInputText}
-            onSend={sendMessage}
-            messageInputRef={messageInputRef}
-          />
-        </View>
-        <Modal visible={showActionModal} transparent animationType="fade">
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            onPress={() => {
-              setShowActionModal(false);
-              setSelectedMsg(null);
-            }}
+          <ImageBackground
+            source={require('../../assets/chatBg.jpg')}
+            resizeMode="cover"
+            style={styles.chatBackground}
+            imageStyle={styles.chatBgImage}
           >
-            <View style={styles.actionBox}>
-              <ActionBtn icon="create-outline" label="Edit" onPress={editMsg} />
-              <ActionBtn icon="trash-outline" label="Delete" onPress={deleteMsg} />
-              <ActionBtn icon="star-outline" label="Star" onPress={toggleStar} />
-              <ActionBtn icon="copy-outline" label="Copy" onPress={copyMsg} />
+            <View style={{}}>
+              <FlatList
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={[COLORS.primary]}
+                    tintColor={COLORS.primary}
+                  />
+                }
+                ListEmptyComponent={
+                  <>
+                    <Text style={{
+                      alignSelf: "center",
+                      padding: wp(2), backgroundColor: COLORS?.primary + "12",
+                      paddingHorizontal: wp(6), borderRadius: wp(2)
+                    }}>
+                      No chats
+                    </Text>
+                  </>
+                }
+                ref={flatListRef}
+                data={messages}
+                renderItem={renderItem}
+                keyExtractor={(item) => item.id}
+                keyboardShouldPersistTaps="handled"
+                onContentSizeChange={() =>
+                  flatListRef.current?.scrollToEnd({ animated: false })
+                }
+                contentContainerStyle={{
+                  padding: wp(3),
+                  paddingBottom: hp(12) + keyboardHeight,
+                }}
+              />
             </View>
-          </TouchableOpacity>
-        </Modal>
-
+          </ImageBackground>
+          <View style={[styles.inputContainer, { bottom: keyboardHeight, zIndex: 999, elevation: 10 }]}>
+            {replyTo && (
+              <View style={styles.replyBar}>
+                <View style={styles.replyBarLine} />
+  
+                <View style={{ flex: 1 }}>
+                  {/* TEXT */}
+                  {!!replyTo.text && (
+                    <Text numberOfLines={1} style={styles.replyBarText}>
+                      {replyTo.text}
+                    </Text>
+                  )}
+                  {/* ATTACHMENT PREVIEW */}
+                  {replyTo.attachment && (
+                    <Text numberOfLines={1} style={styles.replyBarSubText}>
+                      {replyTo.attachment.type === "image" && "📷 Photo"}
+                      {replyTo.attachment.type === "video" && "🎥 Video"}
+                      {replyTo.attachment.type === "audio" && "🎤 Voice Message"}
+                      {replyTo.attachment.type === "document" &&
+                        (replyTo.attachment.name || "📄 Document")}
+                    </Text>
+                  )}
+                </View>
+                <TouchableOpacity onPress={() => setReplyTo(null)}>
+                  <Ionicons name="close" size={20} />
+                </TouchableOpacity>
+              </View>
+            )}
+            <ChatInputBar inputText={inputText} setInputText={setInputText} onSend={sendMessage}
+              messageInputRef={messageInputRef} />
+          </View>
+      
+      <Modal
+    visible={showActionModal}
+    transparent
+    animationType="fade"
+    onRequestClose={() => setShowActionModal(false)}
+  >
+    <TouchableOpacity
+      style={styles.modalOverlay}
+      activeOpacity={1}
+      onPress={() => {
+        setShowActionModal(false);
+        setSelectedMsg(null);
+      }}
+    >
+      
+      {/* STOP PROPAGATION AREA */}
+      <View>
+        
+       
+        <View style={styles.bubbleContainer}>
+          <View
+            style={[
+              styles.bubble,
+              selectedMsg?.status === "sent"
+                ? styles.sentBubble
+                : styles.receivedBubble,
+            ]}
+          >
+            <Text style={styles.msgText}>
+              {selectedMsg?.text}
+            </Text>
+          </View>
+        </View>
+         {/* ACTION BOX (ONLY EMOJIS + ACTIONS) */}
+        <View style={styles.actionBox}>
+          
+          {/* Emojis */}
+          <View style={{ flexDirection: "row", justifyContent: "space-around" }}>
+            {emojis.map((e) => (
+              <Text
+                key={e}
+                onPress={() => {
+                  addReaction(e);
+                  setShowActionModal(false);
+                }}
+                style={{ fontSize: wp(5) }}
+              >
+                {e}
+              </Text>
+            ))}
+          </View>
+  
+          <View style={{ height: 1, backgroundColor: "#eee", marginVertical: wp(2) }} />
+  
+          <ActionBtn icon="create-outline" label="Edit" onPress={editMsg} />
+          <ActionBtn icon="star-outline" label="Star" onPress={toggleStar} />
+          <ActionBtn icon="copy-outline" label="Copy" onPress={copyMsg} />
+        </View>
+  
       </View>
-    </KeyboardAvoidingView>
+    </TouchableOpacity>
+  </Modal>
+  
+  
+        </View>
+      </KeyboardAvoidingView>
+    );
+  };
+  const ActionBtn = ({ icon, label, onPress }) => (
+    <TouchableOpacity onPress={onPress} style={styles.actionRow}>
+      <Ionicons name={icon} size={20} color="#333" />
+      <Text style={styles.actionText}>{label}</Text>
+    </TouchableOpacity>
   );
-};
-
-const ActionBtn = ({ icon, label, onPress }) => (
-  <TouchableOpacity onPress={onPress} style={styles.actionRow}>
-    <Ionicons name={icon} size={20} />
-    <Text style={styles.actionText}>{label}</Text>
-  </TouchableOpacity>
-);
-
-export default GroupChatScreen;
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#EAF2F8" },
-
-  header: {
-    height: hp(8),
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: wp(3),
-    backgroundColor: "#fff",
-    elevation: 3,
-  },
-  replyBar: {
-    flexDirection: "row", alignItems: "center",
-    padding: wp(2), backgroundColor: "#f1f1f1",
-  }, replyBarLine: {
-    width: 4, height: "100%",
-    backgroundColor: COLORS?.primary,
-    marginRight: wp(2), borderRadius: 2,
-  },
-
-  replyBarTitle: {
-    fontSize: wp(2.8), color: "#555",
-  },
-  replyBarText: {
-    fontSize: wp(3.2), color: "#111",
-  },
-  headerAvatar: {
-    width: wp(10),
-    height: wp(10),
-    borderRadius: wp(5),
-    marginHorizontal: wp(2),
-  },
-
-  name: { fontSize: wp(3.8), fontWeight: "600" },
-  lastSeen: { fontSize: wp(2.8), color: "#777" },
-
-  messageRow: {
-    flexDirection: "row",
-    marginVertical: hp(0.3),
-    alignItems: "flex-end",
-  },
-
-  leftAlign: { justifyContent: "flex-start" },
-  rightAlign: { justifyContent: "flex-end" },
-
-  avatar: {
-    width: wp(7), height: wp(7), borderRadius: wp(3.5), marginRight: wp(2),
-    borderWidth: wp(0.3), borderColor: COLORS?.primary
-  },
-  senderName: {
-    fontSize: wp(3), fontWeight: "600", color: "#444", marginBottom: wp(1),
-  }, bubble: {
-    maxWidth: "75%", padding: wp(3), borderRadius: wp(4),
-  }, myBubble: {
-    backgroundColor: "#DCF8C6",
-    borderTopRightRadius: 0,
-  }, theirBubble: { backgroundColor: "#fff", borderTopLeftRadius: 0, },
-  messageText: { fontSize: wp(3.4), color: "#111", }, metaRow: {
-    flexDirection: "row", justifyContent: "flex-end",
-    marginTop: hp(0.5),
-    gap: 4,
-  }, time: { fontSize: wp(2.4), color: "#666", }, inputContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0, backgroundColor: "#fff",
-    borderTopWidth: 0.5,
-    borderColor: "#ddd",
-  },
-  selectionHeader: {
-    height: hp(8),
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: wp(3),
-    backgroundColor: "#fff",
-    justifyContent: "space-between",
-  },
-
-
-  swipeActionArea: {
-    justifyContent: "center",
-    alignItems: "center",
-    width: wp(20),
-  },
-
-  swipeHint: { fontSize: wp(3.2), color: "#111" },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  actionBox: {
-    width: wp(60),
-    backgroundColor: "#fff",
-    borderRadius: wp(4),
-  },
-
-  actionRow: {
-    flexDirection: "row",
-    padding: wp(3),
-    borderBottomWidth: 0.5,
-    borderColor: "#eee",
-    alignItems: "center",
-  },
-
-  actionText: {
-    marginLeft: wp(3),
-    fontSize: wp(3.5),
-  },
-
-  replyBox: {
-    padding: wp(1.5),
-    borderRadius: wp(1.5),
-    marginBottom: hp(0.5),
-    backgroundColor: COLORS?.primary + "10",
-    borderLeftWidth: wp(0.5), borderColor: COLORS?.primary
-  },
-
-  replyText: {
-    fontSize: wp(3),
-    color: "#444",
-  },
-});
+  export default GroupChatScreen;
+  const styles = StyleSheet.create({
+    bubbleContainer: {  marginTop: wp(4),  alignItems: "center",},bubble: {  width: "50%",  padding: wp(3),  borderRadius: wp(3),},sentBubble: {
+    backgroundColor: COLORS.primary,  alignSelf: "flex-end",  borderTopRightRadius: 2,
+  },receivedBubble: {  backgroundColor: "#fff",  alignSelf: "flex-start",  borderTopLeftRadius: 2,
+  },msgText: {  fontSize: wp(3.5),  color: "#ccc",},  chatBackground: {    flex: 1,
+    }, replyBarSubText: { fontSize: wp(3), color: "#666", marginTop: 2, fontWeight: "500", }, chatBgImage: {
+      opacity: 0.08,  }, container: { flex: 1, backgroundColor: COLORS.primary + "12", }, header: {
+      height: hp(8), flexDirection: "row", alignItems: "center", paddingHorizontal: wp(4), borderBottomWidth: 0.5, borderColor: COLORS.primary + "22",
+    }, avatar: {    width: wp(10), height: wp(10), borderRadius: wp(5), borderWidth: wp(0.4), borderColor: COLORS.primary, marginHorizontal: wp(2),
+    }, name: { fontSize: wp(3.8), fontWeight: "600", }, lastSeen: { fontSize: wp(2.8), color: "#777", }, selectionHeader: {
+      height: hp(8), flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: wp(3), backgroundColor: "#fff",
+    }, inputContainer: {    position: "absolute", left: 0, right: 0, backgroundColor: "#fff", borderTopWidth: 1, borderColor: "#eee",
+    }, replyBar: {    flexDirection: "row", alignItems: "center", padding: wp(2), paddingVertical: wp(4), backgroundColor: "#f1f1f1",
+    }, replyBarLine: { width: 4, height: "100%", backgroundColor: COLORS.primary, marginRight: wp(2), borderRadius: 2, }, replyBarText: { fontSize: wp(3.2), color: "#111", },
+    modalOverlay: {    flex: 1, backgroundColor: "rgba(0,0,0,0.75)", justifyContent: "center", alignItems: "center",
+    }, actionBox: {    width: wp(60),marginTop: wp(3)    , backgroundColor: "#fff", borderRadius: wp(4), paddingVertical: wp(2), elevation: 10,
+    }, actionRow: { flexDirection: "row", alignItems: "center", padding: wp(3), borderBottomWidth: 0.5, borderColor: "#eee", }, actionText: {
+      marginLeft: wp(3), fontSize: wp(3.5), color: "#333",  },});

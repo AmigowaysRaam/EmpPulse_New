@@ -1,30 +1,56 @@
 import { Audio } from "expo-av";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    Image, Linking, StyleSheet, Text, TouchableOpacity, View,
+    Image,
+    Linking,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { COLORS } from "../../app/resources/colors";
 import { hp, wp } from "../../app/resources/dimensions";
+// ✅ ADD THIS
+import MediaViewerModal from "./MediaView";
 const ChatMessageItem = ({
-    item, selectionMode, selectedMessages, toggleSelectMessage, setSelectedMsg, setShowActionModal,
-    setReplyTo, swipeRefs, messageInputRef, }) => {
-    const isMe = item.status === "sent";
+    item,
+    selectionMode,
+    selectedMessages,
+    toggleSelectMessage,
+    setSelectedMsg,
+    setShowActionModal,
+    setReplyTo,
+    swipeRefs,
+    messageInputRef,
+    PROFILE_ID,
+}) => {
+
+    const isMe = item.sender == "me";
     const isSelected = selectedMessages.find((m) => m.id === item.id);
+
     const soundRef = useRef(null);
     const [playingId, setPlayingId] = useState(null);
     const [loadingId, setLoadingId] = useState(null);
+
+    // ✅ ONLY NEW ADDITIONS (SAFE)
+    const [viewerVisible, setViewerVisible] = useState(false);
+    const [viewerUri, setViewerUri] = useState(null);
+    const [viewerType, setViewerType] = useState(null);
+
     useEffect(() => {
+        console.log("react", item.reaction);
+        // react {"😂": ["6a3e64ab97ee799659c2c9fa"]}
         return () => {
             if (soundRef.current) {
                 soundRef.current.unloadAsync();
             }
         };
     }, []);
+
     const handleAudioPress = async (uri, id) => {
         try {
-            // pause if same audio
             if (playingId === id && soundRef.current) {
                 await soundRef.current.pauseAsync();
                 setPlayingId(null);
@@ -33,7 +59,6 @@ const ChatMessageItem = ({
 
             setLoadingId(id);
 
-            // stop previous audio
             if (soundRef.current) {
                 await soundRef.current.unloadAsync();
                 soundRef.current = null;
@@ -65,179 +90,208 @@ const ChatMessageItem = ({
         </View>
     );
 
+    // ✅ SAFE MEDIA OPEN FUNCTION
+    const openMedia = (uri, type) => {
+        setViewerUri(uri);
+        setViewerType(type);
+        setViewerVisible(true);
+    };
+
     return (
-        <Swipeable
-            ref={(ref) => {
-                if (ref) swipeRefs.current.set(item.id, ref);
-            }}
-            renderRightActions={renderRightActions}
-            renderLeftActions={renderRightActions}
-            onSwipeableOpen={() => {
-                setReplyTo(item);
-                setTimeout(() => {
-                    messageInputRef.current?.focus();
-                }, 100);
-
-                swipeRefs.current.get(item.id)?.close();
-            }}
-        >
-            <TouchableOpacity
-                activeOpacity={0.9}
-                onLongPress={() => toggleSelectMessage(item)}
-                onPress={() => {
-                    if (selectionMode) {
-                        toggleSelectMessage(item);
-                        return;
-                    }
-
-                    setSelectedMsg(item);
-                    setShowActionModal(true);
+        <>
+            <MediaViewerModal
+                visible={viewerVisible}
+                uri={viewerUri}
+                type={viewerType}
+                onClose={() => setViewerVisible(false)}
+            />
+            <Swipeable
+                ref={(ref) => {
+                    if (ref) swipeRefs.current.set(item.id, ref);
+                }}
+                renderRightActions={renderRightActions}
+                renderLeftActions={renderRightActions}
+                onSwipeableOpen={() => {
+                    setReplyTo(item);
+                    setTimeout(() => {
+                        messageInputRef.current?.focus();
+                    }, 100);
+                    swipeRefs.current.get(item.id)?.close();
                 }}
             >
-                <View
-                    style={[
-                        styles.row,
-                        isMe ? styles.right : styles.left,
-                        isSelected && {
-                            backgroundColor: COLORS.primary + "55",
-                            borderRadius: wp(2),
-                            paddingVertical: wp(2),
-                        },
-                    ]}
+                <TouchableOpacity
+                    activeOpacity={0.9}
+                    onLongPress={() => toggleSelectMessage(item)}
+                    onPress={() => {
+                        if (selectionMode) {
+                            toggleSelectMessage(item);
+                            return;
+                        }
+                        setSelectedMsg(item);
+                        setShowActionModal(true);
+                    }}
                 >
                     <View
                         style={[
-                            styles.bubble,
-                            isMe ? styles.myBubble : styles.theirBubble,
+                            styles.row,
+                            isMe ? styles.right : styles.left,
+                            isSelected && {
+                                backgroundColor: COLORS.primary + "55",
+                                borderRadius: wp(2),
+                                paddingVertical: wp(2),
+                            },
                         ]}
                     >
-                        {item.replyTo && (
-                            <View style={styles.inlineReply}>
-                                <View style={styles.replyLine} />
-                                <Text numberOfLines={1}>{item.replyTo.text}</Text>
-                            </View>
-                        )}
+                        <View
+                            style={[
+                                styles.bubble,
+                                isMe ? styles.myBubble : styles.theirBubble,
+                            ]}
+                        >
+                            {!!item.text && (
+                                <Text style={{ color: isMe ? "#fff" : "#222" }}>
+                                    {item.text}
+                                </Text>
+                            )}
+                            {item.attachment && (
+                                <>
+                                    {item.attachment.type === "image" && (
+                                        <TouchableOpacity
+                                            activeOpacity={0.9}
+                                            onPress={() =>
+                                                openMedia(
+                                                    item.attachment.url,
+                                                    "image"
+                                                )
+                                            }
+                                        >
+                                            <Image
+                                                source={{
+                                                    uri: item.attachment.url,
+                                                }}
+                                                style={styles.image}
+                                                resizeMode="cover"
+                                            />
+                                        </TouchableOpacity>
+                                    )}
 
-                        {!!item.text && (
-                            <Text style={[styles.text, {
-                                color: isMe ? "#fff" : "#222"
-                            }]}>{item.text}</Text>
-                        )}
+                                    {/* AUDIO (UNCHANGED) */}
+                                    {item.attachment.type === "audio" && (
+                                        <TouchableOpacity
+                                            activeOpacity={0.8}
+                                            onPress={() =>
+                                                handleAudioPress(
+                                                    item.attachment.url,
+                                                    item.id
+                                                )
+                                            }
+                                            style={styles.audioBox}
+                                        >
+                                            <View style={styles.audioHeader}>
+                                                <View style={styles.playBtn}>
+                                                    {loadingId === item.id ? (
+                                                        <Text style={{ color: "#fff" }}>
+                                                            ...
+                                                        </Text>
+                                                    ) : (
+                                                        <Ionicons
+                                                            name={
+                                                                playingId === item.id
+                                                                    ? "pause"
+                                                                    : "play-circle"
+                                                            }
+                                                            size={wp(6)}
+                                                            color="#fff"
+                                                        />
+                                                    )}
+                                                </View>
 
-                        {item.attachment && (
-                            <>
-                                {/* IMAGE */}
-                                {item.attachment.type === "image" && (
-                                    <Image
-                                        source={{ uri: item.attachment.url }}
-                                        style={styles.image}
-                                        resizeMode="contain"
-                                    />
-                                )}
+                                                <Text
+                                                    numberOfLines={1}
+                                                    style={styles.audioName}
+                                                >
+                                                    {item.attachment.name || "Voice Message"}
+                                                </Text>
+                                            </View>
+                                            <Text style={styles.audioHint}>
+                                                Tap to play/pause audio
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
 
-                                {/* AUDIO - NEW PLAYER UI */}
-                                {item.attachment.type === "audio" && (
-                                    <TouchableOpacity
-                                        activeOpacity={0.8}
-                                        onPress={() =>
-                                            handleAudioPress(
-                                                item.attachment.url,
-                                                item.id
-                                            )
-                                        }
-                                        style={styles.audioBox}
-                                    >
-                                        <View style={styles.audioHeader}>
-                                            <View style={styles.playBtn}>
-                                                {loadingId === item.id ? (
-                                                    <Text style={{ color: "#fff" }}>
-                                                        ...
-                                                    </Text>
-                                                ) : (
-                                                    <Ionicons
-                                                        name={
-                                                            playingId === item.id
-                                                                ? "pause"
-                                                                : "play-circle"
-                                                        }
-                                                        size={wp(6)}
-                                                        color="#fff"
-                                                    />
-                                                )}
+                                    {/* DOCUMENT (UNCHANGED) */}
+                                    {item.attachment.type === "document" && (
+                                        <TouchableOpacity
+                                            onPress={() =>
+                                                Linking.openURL(item.attachment.url)
+                                            }
+                                            style={styles.docBox}
+                                        >
+                                            <Ionicons
+                                                name="document-text-outline"
+                                                size={28}
+                                                color="#E74C3C"
+                                            />
+
+                                            <View style={{ flex: 1, marginLeft: 10 }}>
+                                                <Text numberOfLines={1} style={styles.docTitle}>
+                                                    {item.attachment.name}
+                                                </Text>
+                                                <Text style={styles.docSubtitle}>
+                                                    Tap to open
+                                                </Text>
                                             </View>
 
-                                            <Text
-                                                numberOfLines={1}
-                                                style={styles.audioName}
-                                            >
-                                                {item.attachment.name ||
-                                                    "Voice Message"}
-                                            </Text>
-                                        </View>
+                                            <Ionicons
+                                                name="open-outline"
+                                                size={22}
+                                                color="#2E86DE"
+                                            />
+                                        </TouchableOpacity>
+                                    )}
+                                </>
+                            )}
 
-                                        <Text style={styles.audioHint}>
-                                            Tap to play/pause audio
-                                        </Text>
-                                    </TouchableOpacity>
-                                )}
-
-                                {/* DOCUMENT */}
-                                {item.attachment.type === "document" && (
-                                    <TouchableOpacity
-                                        onPress={() =>
-                                            Linking.openURL(item.attachment.url)
-                                        }
-                                        style={styles.docBox}
-                                    >
-                                        <Ionicons
-                                            name="document-text-outline"
-                                            size={28}
-                                            color="#E74C3C"
-                                        />
-
-                                        <View style={{ flex: 1, marginLeft: 10 }}>
-                                            <Text
-                                                numberOfLines={1}
-                                                style={styles.docTitle}
-                                            >
-                                                {item.attachment.name}
-                                            </Text>
-
-                                            <Text style={styles.docSubtitle}>
-                                                Tap to open
-                                            </Text>
-                                        </View>
-
-                                        <Ionicons
-                                            name="open-outline"
-                                            size={22}
-                                            color="#2E86DE"
-                                        />
-                                    </TouchableOpacity>
-                                )}
-                            </>
-                        )}
-
-                        {item.starred && <Text>⭐</Text>}
-
-                        {item.reaction && (
-                            <Text style={styles.reaction}>
-                                {item.reaction}
+                            {/* TIME */}
+                            <Text
+                                style={{
+                                    fontSize: wp(2.5),
+                                    marginTop: hp(0.3),
+                                    opacity: 0.6,
+                                    textAlign: "right",
+                                    color: isMe ? "#fff" : "#222",
+                                }}
+                            >
+                                {item.time}
                             </Text>
-                        )}
-
-                        <Text style={[styles.time, {
-                            color: isMe ? "#fff" : "#222"
-                        }]}>{item.time}</Text>
+                                 {/* TIME */}
+                            {/* <Text
+                                style={{
+                                    fontSize: wp(2.5),
+                                    marginTop: hp(0.3),
+                                    opacity: 0.6,
+                                    textAlign: "right",
+                                    color: isMe ? "#fff" : "#222",
+                                }}
+                            >
+                                {JSON.stringify(item)}
+                            </Text> */}
+                            <View style={{ flexDirection: "row", marginTop: 4 }}>
+    {Object.entries(item.reaction || {}).map(([emoji, users]) => (
+        <Text key={emoji} style={{ marginRight: 4, fontSize: 12 }}>
+            {emoji} {users.length}
+        </Text>
+    ))}
+</View>
+                        </View>
                     </View>
-                </View>
-            </TouchableOpacity>
-        </Swipeable>
+                </TouchableOpacity>
+            </Swipeable>
+        </>
     );
 };
 
 export default React.memo(ChatMessageItem);
-
 const styles = StyleSheet.create({
     row: { marginVertical: hp(0.5), },
     left: { alignItems: "flex-start", },

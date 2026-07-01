@@ -3,7 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import Constants from "expo-constants";
 import * as Device from 'expo-device';
 import { t } from "i18next";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Animated, Dimensions, FlatList, Image, Modal, RefreshControl,
     StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback,
@@ -58,7 +58,6 @@ export default function SideMenu({ visible, onClose, onItemPress }) {
             }).start();
         }
     }, [visible]);
-    /* FETCH SIDE MENU DATA */
     const loadSideMenu = async () => {
         setLoadingMenu(true);
         const lang = await getStoredLanguage();

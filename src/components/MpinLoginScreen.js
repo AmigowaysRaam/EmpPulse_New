@@ -14,12 +14,14 @@ import { useToast } from "../../constants/ToastContext";
 import LogoAnimated from "./AniamtedImage";
 import { fetchData } from "./api/Api";
 import { setProfileDetails } from "./store/store";
+
 export default function MpinLoginScreen() {
+
   const navigation = useNavigation();
   const { t } = useTranslation();
   const { showToast } = useToast();
   const dispatch = useDispatch();
-  const [mpin, setMpin] = useState(""); // single string
+  const [mpin, setMpin] = useState("");
   const [error, setError] = useState("");
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(false);

@@ -6,10 +6,19 @@ import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Image, Keyboard, KeyboardAvoidingView,
-  Modal, Platform, Pressable, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity,
-  TouchableWithoutFeedback, View
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 // import { Video as VideoCompress } from "react-native-compressor";
 import { Icon } from "react-native-elements";
@@ -56,11 +65,9 @@ export default function CreateTask({ route }) {
   const [selectedParticularUser, setselectedParticularUser] = useState([]);
   const [showParticluarUserModal, setshowParticluarUserModal] = useState(true);
 
-  const siteDetails = useSelector(
-    (state) => state.auth?.siteDetails?.data[0]
-  );
+  const siteDetails = useSelector((state) => state.auth?.siteDetails?.data[0]);
   const profileDetails = useSelector(
-    (state) => state?.auth?.profileDetails?.data
+    (state) => state?.auth?.profileDetails?.data,
   );
 
   // Automatically open modal on first render
@@ -83,14 +90,14 @@ export default function CreateTask({ route }) {
   const [dueTime, setDueTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const { t } = useTranslation()
+  const { t } = useTranslation();
   const [errors, setErrors] = useState({});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [loading, setloading] = useState(false);
   const [speechTextModal, setspeechTextModal] = useState(false);
-  const [speechFlag, setSpeechFlag] = useState('');
+  const [speechFlag, setSpeechFlag] = useState("");
   const [currentLanguage, setcurrentLanguage] = useState(null);
-  const [mediaTypes, setmediaTypes] = useState('video');
+  const [mediaTypes, setmediaTypes] = useState("video");
   const [images, setImages] = useState([]);
   const [video, setvideo] = useState(null);
   useEffect(() => {
@@ -102,7 +109,7 @@ export default function CreateTask({ route }) {
   }, [selectedTeam, assignedBy, priority, assignType]);
   useEffect(() => {
     setSelectedTeam(null);
-    setselectedParticularUser([])
+    setselectedParticularUser([]);
   }, [assignType]);
   useEffect(() => {
     setErrors({});
@@ -138,23 +145,28 @@ export default function CreateTask({ route }) {
     setloading(true);
     try {
       const lang = await getStoredLanguage();
-      setcurrentLanguage(lang)
-      const response = await fetchData(
-        "app-employee-team-members",
-        "POST",
-        {
-          user_id: profileDetails.id,
-          lang: lang ?? "en",
-          team_id: selectedTeam ? selectedTeam?.value : null,
-          assignType: assignType == 'group' ? 'team' : assignType == 'department' ? 'department' : 'individual',
-          assignedBy: assignedBy ? assignedBy?.value : null,
-          priority: priority ? priority?.value : null
-        }
-      );
+      setcurrentLanguage(lang);
+      const response = await fetchData("app-employee-team-members", "POST", {
+        user_id: profileDetails.id,
+        lang: lang ?? "en",
+        team_id: selectedTeam ? selectedTeam?.value : null,
+        assignType:
+          assignType == "group"
+            ? "team"
+            : assignType == "department"
+              ? "department"
+              : "individual",
+        assignedBy: assignedBy ? assignedBy?.value : null,
+        priority: priority ? priority?.value : null,
+      });
       if (response?.data) {
         setdropDownData(response.data);
         // Alert.alert("Dropdown Data", JSON.stringify(response.data,null,2));
-        setDueDate(response.data?.max_date ? dayjs(response.data.max_date).toDate() : null)
+        setDueDate(
+          response.data?.max_date
+            ? dayjs(response.data.max_date).toDate()
+            : null,
+        );
       }
     } catch (error) {
       console.error("API Error:", error);
@@ -185,7 +197,7 @@ export default function CreateTask({ route }) {
   const titleRef = useRef(null);
   const descRef = useRef(null);
 
-  // -------- AUDIO RECORDING -------- 
+  // -------- AUDIO RECORDING --------
   const startRecording = async (forField) => {
     try {
       const hasPermission = await ensureAudioPermission();
@@ -198,7 +210,7 @@ export default function CreateTask({ route }) {
         playsInSilentModeIOS: true,
       });
       const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
       );
 
       setRecording(recording);
@@ -269,7 +281,7 @@ export default function CreateTask({ route }) {
         if (playbackSoundTitle) await playbackSoundTitle.unloadAsync();
         const { sound, status } = await Audio.Sound.createAsync(
           { uri: audio.uri },
-          { shouldPlay: true }
+          { shouldPlay: true },
         );
         setPlaybackSoundTitle(sound);
         setIsPlayingTitle(true);
@@ -285,7 +297,7 @@ export default function CreateTask({ route }) {
         if (playbackSoundDesc) await playbackSoundDesc.unloadAsync();
         const { sound, status } = await Audio.Sound.createAsync(
           { uri: audio.uri },
-          { shouldPlay: true }
+          { shouldPlay: true },
         );
         setPlaybackSoundDesc(sound);
         setIsPlayingDesc(true);
@@ -332,16 +344,17 @@ export default function CreateTask({ route }) {
   const validate = () => {
     // Alert.alert()
     const newErrors = {};
-    if (!title.trim()) newErrors.title = t('title_Required');
-    if (!description.trim()) newErrors.description = t('desc_Required');
-    if (!priority?.value.trim()) newErrors.priority = t('priority_required');
+    if (!title.trim()) newErrors.title = t("title_Required");
+    if (!description.trim()) newErrors.description = t("desc_Required");
+    if (!priority?.value.trim()) newErrors.priority = t("priority_required");
     // if (!assignedBy && canAssign) newErrors.assignedBy = t('pls_Selct_user');
     if (
-      // assignType === "group" && 
-      !selectedTeam)
-      newErrors.selectedTeam = t('pls_Selct_team');
-    if (!dueDate) newErrors.dueDate = t('pls_Selct_due_date');
-    if (!dueTime) newErrors.dueTime = t('pls_Selct_due_time');
+      // assignType === "group" &&
+      !selectedTeam
+    )
+      newErrors.selectedTeam = t("pls_Selct_team");
+    if (!dueDate) newErrors.dueDate = t("pls_Selct_due_date");
+    if (!dueTime) newErrors.dueTime = t("pls_Selct_due_time");
     // Focus first invalid field
     if (newErrors.title) {
       titleRef.current?.focus();
@@ -399,12 +412,13 @@ export default function CreateTask({ route }) {
         // Ensure proper URI format for preview/upload
         const videoForPreview = {
           ...originalVideo,
-          uri: compressedUri.startsWith("file://") ? compressedUri : `file://${compressedUri}`,
+          uri: compressedUri.startsWith("file://")
+            ? compressedUri
+            : `file://${compressedUri}`,
           source: source === "camera" ? "Camera" : "Gallery",
           type: originalVideo.type || "video/mp4",
           name: originalVideo.fileName || `video_${Date.now()}.mp4`,
         };
-
         // Set state with compressed video
         setvideo([videoForPreview]);
       } else {
@@ -419,7 +433,8 @@ export default function CreateTask({ route }) {
   };
   const handleSubmit = async () => {
     if (!validate()) return;
-    setShowConfirmModal(false)
+    setShowConfirmModal(false);
+
     const combinedDateTime = dayjs(dueDate)
       .hour(dueTime.getHours())
       .minute(dueTime.getMinutes())
@@ -430,16 +445,26 @@ export default function CreateTask({ route }) {
     try {
       const formData = new FormData();
       formData.append("user_id", profileDetails.id.toString());
-      formData.append("assign_to_type", assignType == "group" ? "team" : assignType == "department" ? "department" : "individual");
+      formData.append(
+        "assign_to_type",
+        assignType == "group"
+          ? "team"
+          : assignType == "department"
+            ? "department"
+            : "individual",
+      );
       formData.append("assign_to", selectedTeam?.length ? selectedTeam : []);
-      // 
-      formData.append("assign_to_value", selectedTeam?.value ? selectedTeam?.value : null);
+      //
+      formData.append(
+        "assign_to_value",
+        selectedTeam?.value ? selectedTeam?.value : null,
+      );
       // formData.append("users", selectedTeam?.length ? selectedTeam : []);
       formData.append(
         "users",
         selectedTeam && selectedTeam?.length > 0
-          ? JSON.stringify(selectedTeam.map(user => user?.value))
-          : "[]"
+          ? JSON.stringify(selectedTeam.map((user) => user?.value))
+          : "[]",
       );
       formData.append("title", title);
       formData.append("description", description);
@@ -450,8 +475,8 @@ export default function CreateTask({ route }) {
       formData.append(
         "selectedUsers",
         selectedParticularUser && selectedParticularUser.length > 0
-          ? JSON.stringify(selectedParticularUser.map(user => user?.value))
-          : "[]"
+          ? JSON.stringify(selectedParticularUser.map((user) => user?.value))
+          : "[]",
       );
       images.forEach((img, index) => {
         formData.append("image[]", {
@@ -483,18 +508,18 @@ export default function CreateTask({ route }) {
       });
       const resultJson = await response.json();
       if (resultJson?.success) {
-        setShowConfirmModal(false)
-        showToast(resultJson.message, 'success');
+        setShowConfirmModal(false);
+        showToast(resultJson.message, "success");
         navigation?.goBack();
       } else {
-        showToast(resultJson?.message || "Failed to create task", 'error');
+        showToast(resultJson?.message || "Failed to create task", "error");
       }
     } catch (error) {
       console.error("API Error:", error);
-      showToast("Something went wrong while creating task", 'error');
+      showToast("Something went wrong while creating task", "error");
     } finally {
       setloading(false);
-      setShowConfirmModal(false)
+      setShowConfirmModal(false);
     }
   };
   const openImageViewer = (uri) => {
@@ -520,14 +545,17 @@ export default function CreateTask({ route }) {
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
-  const scrollToBottom = () => {
-  };
+  const scrollToBottom = () => {};
   return (
-    <View style={{
-      flex: 1, backgroundColor: "#fff",
-    }} pointerEvents={loading ? "none" : "auto"}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: "#fff",
+      }}
+      pointerEvents={loading ? "none" : "auto"}
+    >
       <CommonHeader
-        title={t('create_task')}
+        title={t("create_task")}
         showBackButton
         onBackPress={() => navigation.goBack()}
       />
@@ -567,9 +595,26 @@ export default function CreateTask({ route }) {
       )}
       {isCompressing && (
         <View style={{ marginVertical: 10 }}>
-          <Text>Video Processing: {(compressionProgress * 100).toFixed(0)}%</Text>
-          <View style={{ width: "100%", height: 10, backgroundColor: "#eee", borderRadius: 5, overflow: "hidden", marginTop: 5 }}>
-            <View style={{ height: "100%", width: `${compressionProgress * 100}%`, backgroundColor: "#4caf50" }} />
+          <Text>
+            Video Processing: {(compressionProgress * 100).toFixed(0)}%
+          </Text>
+          <View
+            style={{
+              width: "100%",
+              height: 10,
+              backgroundColor: "#eee",
+              borderRadius: 5,
+              overflow: "hidden",
+              marginTop: 5,
+            }}
+          >
+            <View
+              style={{
+                height: "100%",
+                width: `${compressionProgress * 100}%`,
+                backgroundColor: "#4caf50",
+              }}
+            />
           </View>
         </View>
       )}
@@ -588,29 +633,39 @@ export default function CreateTask({ route }) {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.inputContainer}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: wp(0.5) }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  alignItems: "center",
+                  marginBottom: wp(0.5),
+                }}
+              >
                 <Text style={styles.label}>{`${t("title")} *`}</Text>
               </View>
               <TextInput
                 ref={titleRef}
                 maxLength={30}
                 style={styles.input}
-                placeholder={t('enter_task_title')}
+                placeholder={t("enter_task_title")}
                 value={title}
                 onChangeText={setTitle}
-                placeholderTextColor={'#777'}
+                placeholderTextColor={"#777"}
               />
               <Icon
                 name="mic"
                 type="feather"
                 size={wp(5)}
                 color={COLORS.gray}
-                containerStyle={[styles.inputIcon, {
-                  top: hp(5.5)
-                }]}
+                containerStyle={[
+                  styles.inputIcon,
+                  {
+                    top: hp(5.5),
+                  },
+                ]}
                 onPress={() => {
-                  setspeechTextModal(true),
-                    setSpeechFlag('title')
+                  (setspeechTextModal(true), setSpeechFlag("title"));
                 }}
               />
             </View>
@@ -618,129 +673,226 @@ export default function CreateTask({ route }) {
               <Text style={styles.errorText}>{errors.title}</Text>
             )}
             <View style={styles.inputContainer}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: wp(0.5) }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  alignItems: "center",
+                  marginBottom: wp(0.5),
+                }}
+              >
                 <Text style={styles.label}>{`${t("description")} *`}</Text>
               </View>
               <TextInput
                 ref={descRef}
-                style={[styles.input, { height: hp(15), textAlignVertical: "top", paddingRight: wp(12) }]} // Add right padding for mic
-                placeholder={t('enter_task_desc')}
+                style={[
+                  styles.input,
+                  {
+                    height: hp(15),
+                    textAlignVertical: "top",
+                    paddingRight: wp(12),
+                  },
+                ]} // Add right padding for mic
+                placeholder={t("enter_task_desc")}
                 value={description}
                 onChangeText={setDescription}
                 multiline
                 onFocus={scrollToBottom}
-                placeholderTextColor={'#777'}
+                placeholderTextColor={"#777"}
               />
               {errors.description && (
-                <Text style={[styles.errorText, {
-                  marginTop: wp(2)
-                }]}>{errors.description}</Text>
+                <Text
+                  style={[
+                    styles.errorText,
+                    {
+                      marginTop: wp(2),
+                    },
+                  ]}
+                >
+                  {errors.description}
+                </Text>
               )}
-              {
-                !descAudio &&
+              {!descAudio && (
                 <Pressable
                   onPress={() => startRecording("desc")}
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    borderWidth: wp(0.3), borderColor: COLORS?.gray, paddingHorizontal: wp(2), paddingVertical: hp(0.4), borderRadius: wp(1), gap: wp(2), height: hp(6), marginVertical: hp(2)
+                    borderWidth: wp(0.3),
+                    borderColor: COLORS?.gray,
+                    paddingHorizontal: wp(2),
+                    paddingVertical: hp(0.4),
+                    borderRadius: wp(1),
+                    gap: wp(2),
+                    height: hp(6),
+                    marginVertical: hp(2),
                   }}
                 >
-                  <Text numberOfLines={1} style={{ fontFamily: "Poppins_400Regular", color: "#777", fontSize: wp(3.2), lineHeight: hp(3) }} ellipsizeMode="tail">
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontFamily: "Poppins_400Regular",
+                      color: "#777",
+                      fontSize: wp(3.2),
+                      lineHeight: hp(3),
+                    }}
+                    ellipsizeMode="tail"
+                  >
                     {t("add_description_audio")}
                   </Text>
                   <Icon
-                    type="feather" name={"mic"} size={wp(5)}
-                    color={"#000"} />
+                    type="feather"
+                    name={"mic"}
+                    size={wp(5)}
+                    color={"#000"}
+                  />
                 </Pressable>
-              }
-              {
-                descAudio ? (
-                  <View style={{
+              )}
+              {descAudio ? (
+                <View
+                  style={{
                     flexDirection: "row",
-                    alignItems: "center", justifyContent: "space-between",
-                    borderWidth: wp(0.3), borderColor: COLORS?.gray, paddingHorizontal: wp(2), paddingVertical: hp(0.4), borderRadius: wp(2), gap: wp(2), height: hp(6), marginVertical: hp(2)
-                  }}>
-                    <Text
-                      style={{
-                        fontFamily: "Poppins_400Regular", fontSize: wp(3.5),
-                        marginRight: wp(1), lineHeight: wp(6)
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    borderWidth: wp(0.3),
+                    borderColor: COLORS?.gray,
+                    paddingHorizontal: wp(2),
+                    paddingVertical: hp(0.4),
+                    borderRadius: wp(2),
+                    gap: wp(2),
+                    height: hp(6),
+                    marginVertical: hp(2),
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "Poppins_400Regular",
+                      fontSize: wp(3.5),
+                      marginRight: wp(1),
+                      lineHeight: wp(6),
+                    }}
+                  >
+                    {descAudio.name} (
+                    {descAudio.duration
+                      ? formatTime(descAudio.duration * 1000)
+                      : recordTime > 0
+                        ? formatTime(recordTime * 1000)
+                        : "0:00"}
+                    ){isPlayingDesc ? t("playing") : ""}
+                  </Text>
 
-                      }}
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        isPlayingDesc
+                          ? stopAudio("desc")
+                          : playAudio(descAudio, "desc")
+                      }
                     >
-                      {descAudio.name} (
-                      {descAudio.duration
-                        ? formatTime(descAudio.duration * 1000)
-                        : recordTime > 0
-                          ? formatTime(recordTime * 1000)
-                          : "0:00"}
-                      ){isPlayingDesc ? t('playing') : ''}
-                    </Text>
-
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <TouchableOpacity
-                        onPress={() =>
-                          isPlayingDesc
-                            ? stopAudio("desc")
-                            : playAudio(descAudio, "desc")
-                        }
-                      >
-                        <Icon
-                          name={isPlayingDesc ? "pause" : "play-arrow"}
-                          size={wp(10)}
-                          color={COLORS.green}
-                        />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => deleteAudio("desc")}
-                      >
-                        <Icon
-                          name="x-circle"
-                          type="feather"
-                          size={wp(8)}
-                          color={COLORS.red}
-                        />
-                      </TouchableOpacity>
-                    </View>
+                      <Icon
+                        name={isPlayingDesc ? "pause" : "play-arrow"}
+                        size={wp(10)}
+                        color={COLORS.green}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteAudio("desc")}>
+                      <Icon
+                        name="x-circle"
+                        type="feather"
+                        size={wp(8)}
+                        color={COLORS.red}
+                      />
+                    </TouchableOpacity>
                   </View>
-                ) : (
-                  null
-                )}
+                </View>
+              ) : null}
               <TouchableOpacity
                 style={styles.micIconContainer} // Absolute inside TextInput
                 onPress={() => {
-                  setspeechTextModal(true),
-                    setSpeechFlag('description')
+                  (setspeechTextModal(true), setSpeechFlag("description"));
                 }}
               >
-                <Icon name="mic" type="feather" size={wp(5)} color={COLORS.gray} />
+                <Icon
+                  name="mic"
+                  type="feather"
+                  size={wp(5)}
+                  color={COLORS.gray}
+                />
               </TouchableOpacity>
             </View>
 
             <View style={{ marginBottom: wp(4) }}>
               <Text style={styles.label}>{t("images")}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: wp(2) }}>
+              <View
+                style={{ flexDirection: "row", flexWrap: "wrap", gap: wp(2) }}
+              >
                 {images.map((img, idx) => (
-                  <View key={idx} style={{ position: "relative", width: wp(26), height: hp(15), marginRight: wp(2), marginBottom: hp(1) }}>
-                    <Pressable onPress={() => openImageViewer(img.uri)} >
-                      <Image source={{ uri: img.uri }} style={{ width: "100%", height: wp(26), borderRadius: wp(2) }} resizeMode="contain" />
+                  <View
+                    key={idx}
+                    style={{
+                      position: "relative",
+                      width: wp(26),
+                      height: hp(15),
+                      marginRight: wp(2),
+                      marginBottom: hp(1),
+                    }}
+                  >
+                    <Pressable onPress={() => openImageViewer(img.uri)}>
+                      <Image
+                        source={{ uri: img.uri }}
+                        style={{
+                          width: "100%",
+                          height: wp(26),
+                          borderRadius: wp(2),
+                        }}
+                        resizeMode="contain"
+                      />
                     </Pressable>
                     <Pressable
                       onPress={() => removeImage(idx)}
-                      style={{ position: "absolute", top: -wp(2), right: -wp(2), backgroundColor: "red", borderRadius: wp(3), padding: wp(1) }}
+                      style={{
+                        position: "absolute",
+                        top: -wp(2),
+                        right: -wp(2),
+                        backgroundColor: "red",
+                        borderRadius: wp(3),
+                        padding: wp(1),
+                      }}
                     >
-                      <Icon name="trash" type="feather" size={wp(4)} color="#fff" />
+                      <Icon
+                        name="trash"
+                        type="feather"
+                        size={wp(4)}
+                        color="#fff"
+                      />
                     </Pressable>
                   </View>
                 ))}
                 {images.length < 3 && (
                   <Pressable
                     // onPress={() => setmediaModal(true)}
-                    onPress={() => { setmediaTypes('image'), setmediaModal(true) }}
-                    style={{ borderWidth: wp(0.4), height: wp(28), width: wp(25), alignItems: "center", justifyContent: "center", borderRadius: wp(2), borderColor: COLORS?.primary, backgroundColor: "#f9f9f9" }}
+                    onPress={() => {
+                      (setmediaTypes("image"), setmediaModal(true));
+                    }}
+                    style={{
+                      borderWidth: wp(0.4),
+                      height: wp(28),
+                      width: wp(25),
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: wp(2),
+                      borderColor: COLORS?.primary,
+                      backgroundColor: "#f9f9f9",
+                    }}
                   >
-                    <Icon name="plus" type="feather" size={wp(5.5)} color={COLORS.primary} />
+                    <Icon
+                      name="plus"
+                      type="feather"
+                      size={wp(5.5)}
+                      color={COLORS.primary}
+                    />
                   </Pressable>
                 )}
               </View>
@@ -768,7 +920,12 @@ export default function CreateTask({ route }) {
                       marginBottom: wp(2),
                     }}
                   >
-                    <Icon name="plus" type="feather" size={wp(7)} color={COLORS.primary} />
+                    <Icon
+                      name="plus"
+                      type="feather"
+                      size={wp(7)}
+                      color={COLORS.primary}
+                    />
                   </Pressable>
                 )}
                 {/* Video preview (full width) */}
@@ -779,12 +936,20 @@ export default function CreateTask({ route }) {
                       height: wp(35), // same height as button
                       position: "relative",
                       marginBottom: wp(2),
-                      borderWidth: wp(0.4), borderColor: COLORS?.gray, borderRadius: wp(2)
+                      borderWidth: wp(0.4),
+                      borderColor: COLORS?.gray,
+                      borderRadius: wp(2),
                     }}
                   >
                     <Video
                       source={{ uri: video[0].uri }}
-                      style={{ width: "95%", height: "90%", borderRadius: wp(2), alignSelf: 'center', marginTop: hp(1) }}
+                      style={{
+                        width: "95%",
+                        height: "90%",
+                        borderRadius: wp(2),
+                        alignSelf: "center",
+                        marginTop: hp(1),
+                      }}
                       resizeMode="cover"
                       useNativeControls
                       usePoster={true}
@@ -803,7 +968,12 @@ export default function CreateTask({ route }) {
                         zIndex: 10,
                       }}
                     >
-                      <Icon name="trash" type="feather" size={wp(5)} color="#ff0000" />
+                      <Icon
+                        name="trash"
+                        type="feather"
+                        size={wp(5)}
+                        color="#ff0000"
+                      />
                     </Pressable>
                     {/* <Text>{JSON.stringify(video)}</Text> */}
                   </View>
@@ -813,14 +983,23 @@ export default function CreateTask({ route }) {
             <Modal transparent visible={isRecording} animationType="fade">
               <View style={styles.recordingOverlay}>
                 <View style={styles.recordingPopup}>
-                  <Text style={[styles.recordingText, {
-                    fontSize: wp(lang == 'ta' ? 2.5 : 3.5)
-                  }]}>
-                    {`${t('recording')}`} {recordingFor === "title" ? t('title') : t('descption')}...
+                  <Text
+                    style={[
+                      styles.recordingText,
+                      {
+                        fontSize: wp(lang == "ta" ? 2.5 : 3.5),
+                      },
+                    ]}
+                  >
+                    {`${t("recording")}`}{" "}
+                    {recordingFor === "title" ? t("title") : t("descption")}...
                   </Text>
                   <Text style={styles.recordingTime}>{recordTime}s</Text>
-                  <TouchableOpacity style={styles.stopButton} onPress={stopRecording}>
-                    <Text style={styles.stopButtonText}>{t('stop')}</Text>
+                  <TouchableOpacity
+                    style={styles.stopButton}
+                    onPress={stopRecording}
+                  >
+                    <Text style={styles.stopButtonText}>{t("stop")}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -836,13 +1015,15 @@ export default function CreateTask({ route }) {
               />
             } */}
             {/* <Text style={styles.label}>{JSON.stringify(assignedBy?.value)}</Text> */}
-            {errors.assignedBy && <Text style={styles.errorText}>{errors.assignedBy}</Text>}
-            <Text style={styles.label}>{`${t('assignto')} *`}</Text>
+            {errors.assignedBy && (
+              <Text style={styles.errorText}>{errors.assignedBy}</Text>
+            )}
+            <Text style={styles.label}>{`${t("assignto")} *`}</Text>
             <View style={styles.radioContainer}>
               <Pressable
                 style={styles.radioButton}
                 onPress={() => {
-                  setAssignType("individual"), setSelectedTeam(null)
+                  (setAssignType("individual"), setSelectedTeam(null));
                 }}
               >
                 <Icon
@@ -852,11 +1033,13 @@ export default function CreateTask({ route }) {
                   color={COLORS.primary}
                   style={{ marginRight: hp(1) }}
                 />
-                <Text style={styles.radioLabel}>{`${t('individual')}`}</Text>
+                <Text style={styles.radioLabel}>{`${t("individual")}`}</Text>
               </Pressable>
               <Pressable
                 style={styles.radioButton}
-                onPress={() => { setAssignType("group"), setSelectedTeam(null) }}
+                onPress={() => {
+                  (setAssignType("group"), setSelectedTeam(null));
+                }}
               >
                 <Icon
                   name={assignType === "group" ? "check-circle" : "circle"}
@@ -865,11 +1048,13 @@ export default function CreateTask({ route }) {
                   color={COLORS.primary}
                   style={{ marginRight: hp(1) }}
                 />
-                <Text style={styles.radioLabel}>{`${t('Team')}`}</Text>
+                <Text style={styles.radioLabel}>{`${t("Team")}`}</Text>
               </Pressable>
               <Pressable
                 style={styles.radioButton}
-                onPress={() => { setAssignType("department"), setSelectedTeam(null) }}
+                onPress={() => {
+                  (setAssignType("department"), setSelectedTeam(null));
+                }}
               >
                 <Icon
                   name={assignType === "department" ? "check-circle" : "circle"}
@@ -878,59 +1063,73 @@ export default function CreateTask({ route }) {
                   color={COLORS.primary}
                   style={{ marginRight: hp(1) }}
                 />
-                <Text style={styles.radioLabel}>{`${t('department')}  `}</Text>
+                <Text style={styles.radioLabel}>{`${t("department")}  `}</Text>
               </Pressable>
             </View>
-            {
-              assignType && (
-                <UserCustomDropdown
-                  multiSelect={assignType === "individual"}
-                  loading={loading}
-                  assignType={assignType}
-                  title={`${t(
-                    assignType === 'department' ? 'assign_department' :
-                      assignType === 'group' ? 'select_team' :
-                        'select_user'
-                  )} *`}
-                  data={
-                    assignType === 'department' ? dropDownData?.departments :
-                      assignType === 'group' ? dropDownData?.teams :
-                        dropDownData?.individual_users
-                  }
-                  placeholder={`${t(
-                    assignType === 'department' ? 'assign_department' :
-                      assignType === 'group' ? 'select_team' :
-                        'select_user'
-                  )}`}
-                  selected={selectedTeam?.length ? selectedTeam : null} // pass selected item
-                  onSelect={(item) => {
-                    setSelectedTeam(item), setselectedParticularUser([]),
-                      setTimeout(() => {
-                        setshowParticluarUserModal(true)
-                      }, 100);
-                  }} // update selected item
-                />
-              )
-            }
+            {assignType && (
+              <UserCustomDropdown
+                multiSelect={assignType === "individual"}
+                loading={loading}
+                assignType={assignType}
+                title={`${t(
+                  assignType === "department"
+                    ? "assign_department"
+                    : assignType === "group"
+                      ? "select_team"
+                      : "select_user",
+                )} *`}
+                data={
+                  assignType === "department"
+                    ? dropDownData?.departments
+                    : assignType === "group"
+                      ? dropDownData?.teams
+                      : dropDownData?.individual_users
+                }
+                placeholder={`${t(
+                  assignType === "department"
+                    ? "assign_department"
+                    : assignType === "group"
+                      ? "select_team"
+                      : "select_user",
+                )}`}
+                selected={selectedTeam?.length ? selectedTeam : null} // pass selected item
+                onSelect={(item) => {
+                  (setSelectedTeam(item),
+                    setselectedParticularUser([]),
+                    setTimeout(() => {
+                      setshowParticluarUserModal(true);
+                    }, 100));
+                }} // update selected item
+              />
+            )}
             {/* <Text>{JSON.stringify(selectedTeam)}</Text> */}
             {errors.selectedTeam && (
               <Text style={styles.errorText}>
                 {t(
-                  assignType === 'department' ? 'assign_department' :
-                    assignType === 'group' ? 'select_team' :
-                      'select_user'
+                  assignType === "department"
+                    ? "assign_department"
+                    : assignType === "group"
+                      ? "select_team"
+                      : "select_user",
                 )}
               </Text>
             )}
-            {selectedTeam && !loading &&
+            {selectedTeam && !loading && (
               <SelectTeamMembers
                 assignType={assignType}
                 preSelected={selectedParticularUser}
                 teamMembers={dropDownData}
-                visible={showParticluarUserModal && !loading && assignType != 'individual' && dropDownData?.length && selectedTeam}
+                visible={
+                  showParticluarUserModal &&
+                  !loading &&
+                  assignType != "individual" &&
+                  dropDownData?.length &&
+                  selectedTeam
+                }
                 onClose={() => setshowParticluarUserModal(false)}
                 onDone={handleTeamSelection}
-              />}
+              />
+            )}
             <ConfirmTaskModal
               visible={showConfirmModal}
               onClose={() => setShowConfirmModal(false)}
@@ -940,7 +1139,7 @@ export default function CreateTask({ route }) {
                 priority: priority?.label || "1",
                 due_date: dayjs(dueDate).format("DD-MM-YYYY"),
                 due_time: dayjs(dueTime).format("hh:mm A"),
-                assignType: assignType
+                assignType: assignType,
               }}
               selectedTeam={selectedTeam}
               selectedUsers={
@@ -954,185 +1153,237 @@ export default function CreateTask({ route }) {
               loading={loading}
               onConfirm={handleSubmit} // call your API function here
             />
-            {
-              selectedTeam?.value && assignType != 'individual' &&
-              dropDownData?.team_users?.length &&
-              <Pressable
-                onPress={() => setshowParticluarUserModal(true)}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#fff",
-                  padding: wp(2),
-                  borderRadius: wp(1.5),
-                  borderWidth: 1,
-                  borderColor: selectedParticularUser.length === 0 ? COLORS?.primary : "#ddd", // red border if no user
-                  minHeight: wp(12),
-                  marginBottom: wp(5),
-                  justifyContent: "space-between",
-                }}
-              >
-                {/* Avatar Stack: render only if there are selected users */}
-                {selectedParticularUser.length > 0 ? (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      position: "relative",
-                      width: wp(8) * 3 - 10 * 2,
-                      height: wp(8),
-                    }}
-                  >
-                    {selectedParticularUser?.slice(0, 3).map((user, index) => (
-                      <View
-                        key={index}
-                        style={{
-                          position: "absolute",
-                          left: index * (wp(8) - 10),
-                          width: wp(8),
-                          height: wp(8),
-                          borderRadius: wp(4),
-                          borderWidth: 1,
-                          borderColor: COLORS?.primary,
-                          overflow: "hidden",
-                          backgroundColor: COLORS?.primary + "20",
-                          zIndex: 10 - index,
-                        }}
-                      >
-                        <Image
-                          source={{ uri: user.image }}
-                          style={{ width: "100%", height: "100%" }}
-                          resizeMode="cover"
-                        />
-                      </View>
-                    ))}
-                    {selectedParticularUser.length > 3 && (
-                      <View
-                        style={{
-                          position: "absolute",
-                          left: 2 * (wp(8) - 10),
-                          width: wp(8),
-                          height: wp(8),
-                          borderRadius: wp(4),
-                          backgroundColor: COLORS.primary,
-                          justifyContent: "center",
-                          alignItems: "center",
-                          zIndex: 1000,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: "#fff",
-                            fontSize: wp(3.2),
-                            fontWeight: "600",
-                          }}
-                        >
-                          {`+${selectedParticularUser.length - 2}`}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                ) : (
-                  <View style={{
-                    flex: 1, justifyContent: "space-around", alignItems: "center",
+            {selectedTeam?.value &&
+              assignType != "individual" &&
+              dropDownData?.team_users?.length && (
+                <Pressable
+                  onPress={() => setshowParticluarUserModal(true)}
+                  style={{
                     flexDirection: "row",
-                  }}>
-                    <Text
+                    alignItems: "center",
+                    backgroundColor: "#fff",
+                    padding: wp(2),
+                    borderRadius: wp(1.5),
+                    borderWidth: 1,
+                    borderColor:
+                      selectedParticularUser.length === 0
+                        ? COLORS?.primary
+                        : "#ddd", // red border if no user
+                    minHeight: wp(12),
+                    marginBottom: wp(5),
+                    justifyContent: "space-between",
+                  }}
+                >
+                  {/* Avatar Stack: render only if there are selected users */}
+                  {selectedParticularUser.length > 0 ? (
+                    <View
                       style={{
-                        fontSize: wp(4),
-                        fontWeight: "500",
-                        color: COLORS?.primary,
-                        textAlign: "center",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        position: "relative",
+                        width: wp(8) * 3 - 10 * 2,
+                        height: wp(8),
                       }}
                     >
-                      {`${dropDownData?.team_users?.length} selected`}
-                    </Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: hp(0.5) }}>
-                      {/* <Icon
+                      {selectedParticularUser
+                        ?.slice(0, 3)
+                        .map((user, index) => (
+                          <View
+                            key={index}
+                            style={{
+                              position: "absolute",
+                              left: index * (wp(8) - 10),
+                              width: wp(8),
+                              height: wp(8),
+                              borderRadius: wp(4),
+                              borderWidth: 1,
+                              borderColor: COLORS?.primary,
+                              overflow: "hidden",
+                              backgroundColor: COLORS?.primary + "20",
+                              zIndex: 10 - index,
+                            }}
+                          >
+                            <Image
+                              source={{ uri: user.image }}
+                              style={{ width: "100%", height: "100%" }}
+                              resizeMode="cover"
+                            />
+                          </View>
+                        ))}
+                      {selectedParticularUser.length > 3 && (
+                        <View
+                          style={{
+                            position: "absolute",
+                            left: 2 * (wp(8) - 10),
+                            width: wp(8),
+                            height: wp(8),
+                            borderRadius: wp(4),
+                            backgroundColor: COLORS.primary,
+                            justifyContent: "center",
+                            alignItems: "center",
+                            zIndex: 1000,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#fff",
+                              fontSize: wp(3.2),
+                              fontWeight: "600",
+                            }}
+                          >
+                            {`+${selectedParticularUser.length - 2}`}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  ) : (
+                    <View
+                      style={{
+                        flex: 1,
+                        justifyContent: "space-around",
+                        alignItems: "center",
+                        flexDirection: "row",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: wp(4),
+                          fontWeight: "500",
+                          color: COLORS?.primary,
+                          textAlign: "center",
+                        }}
+                      >
+                        {`${dropDownData?.team_users?.length} selected`}
+                      </Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginTop: hp(0.5),
+                        }}
+                      >
+                        {/* <Icon
                         name="add"
                         size={wp(4.5)}
                         color="#000"
                         style={{ marginRight: wp(1) }}
                       /> */}
-                      <Text
-                        style={{
-                          fontSize: wp(3.2),
-                          color: "#888",
-                          textAlign: "center",
-                        }}
-                      >
-                        {t("click_to_edit")}
-                      </Text>
+                        <Text
+                          style={{
+                            fontSize: wp(3.2),
+                            color: "#888",
+                            textAlign: "center",
+                          }}
+                        >
+                          {t("click_to_edit")}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                )}
+                  )}
 
-                {/* Text and arrow */}
-                {selectedParticularUser.length > 0 && (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text
+                  {/* Text and arrow */}
+                  {selectedParticularUser.length > 0 && (
+                    <View
                       style={{
-                        fontSize: wp(4),
-                        fontWeight: "500",
-                        color: "#333",
+                        flexDirection: "row",
+                        alignItems: "center",
                       }}
                     >
-                      {`${selectedParticularUser.length} user(s) selected`}
-                    </Text>
-                    <Icon
-                      name="arrow-drop-down"
-                      size={wp(7)}
-                      color={"#000"}
-                      style={{ marginLeft: wp(2) }}
-                    />
-                  </View>
-                )}
-              </Pressable>
-            }
+                      <Text
+                        style={{
+                          fontSize: wp(4),
+                          fontWeight: "500",
+                          color: "#333",
+                        }}
+                      >
+                        {`${selectedParticularUser.length} user(s) selected`}
+                      </Text>
+                      <Icon
+                        name="arrow-drop-down"
+                        size={wp(7)}
+                        color={"#000"}
+                        style={{ marginLeft: wp(2) }}
+                      />
+                    </View>
+                  )}
+                </Pressable>
+              )}
             <TaskPriority
-              title={`${t('task_priority')} *`}
+              title={`${t("task_priority")} *`}
               data={siteDetails?.prioritiesList || []}
-              placeholder={`${t('choose_priority')}`}
+              placeholder={`${t("choose_priority")}`}
               onSelect={(item) => setpriority(item)}
               selected={priority?.value}
             />
             {errors?.priority && (
               <Text style={styles.errorText}>{errors?.priority}</Text>
             )}
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: hp(0) }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: hp(0),
+              }}
+            >
               <View style={{ width: wp(44) }}>
-                <Text style={styles.label}>{`${t('due_date')}*`}</Text>
-                <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-                  <Text numberOfLines={1} style={[styles.dateText, {
-                    fontSize: wp(lang == 'ta' && !dueDate ? 2.5 : 3.5)
-                  }]}>
-                    {dueDate ? dayjs(dueDate).format("DD/MM/YYYY") : t('select_date')}
+                <Text style={styles.label}>{`${t("due_date")}*`}</Text>
+                <Pressable
+                  onPress={() => setShowDatePicker(true)}
+                  style={styles.dateButton}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.dateText,
+                      {
+                        fontSize: wp(lang == "ta" && !dueDate ? 2.5 : 3.5),
+                      },
+                    ]}
+                  >
+                    {dueDate
+                      ? dayjs(dueDate).format("DD/MM/YYYY")
+                      : t("select_date")}
                   </Text>
                 </Pressable>
-                {errors.dueDate && <Text style={[styles.errorText, {
-                  marginTop: wp(2)
-                }]}>{errors.dueDate}</Text>}
+                {errors.dueDate && (
+                  <Text
+                    style={[
+                      styles.errorText,
+                      {
+                        marginTop: wp(2),
+                      },
+                    ]}
+                  >
+                    {errors.dueDate}
+                  </Text>
+                )}
               </View>
               <View style={{ width: wp(44) }}>
-                <Text style={styles.label}>{`${t('due_time')} *`}</Text>
-                <Pressable onPress={() => setShowTimePicker(true)} style={styles.dateButton}>
-                  <Text style={[styles.dateText, {
-                  }]}>
+                <Text style={styles.label}>{`${t("due_time")} *`}</Text>
+                <Pressable
+                  onPress={() => setShowTimePicker(true)}
+                  style={styles.dateButton}
+                >
+                  <Text style={[styles.dateText, {}]}>
                     {dueTime ? dayjs(dueTime).format("hh:mm A") : "Select Time"}
                   </Text>
                 </Pressable>
-                {errors.dueTime && <Text style={[styles.errorText, {
-                  marginTop: wp(4)
-                }]}>{errors.dueTime}</Text>}
+                {errors.dueTime && (
+                  <Text
+                    style={[
+                      styles.errorText,
+                      {
+                        marginTop: wp(4),
+                      },
+                    ]}
+                  >
+                    {errors.dueTime}
+                  </Text>
+                )}
               </View>
             </View>
             <CustomSingleDatePickerModal
-              title={t('select_date')}
+              title={t("select_date")}
               disablePastDates={true}
               visible={showDatePicker}
               initialDate={dueDate}
@@ -1153,23 +1404,28 @@ export default function CreateTask({ route }) {
                   if (!selectedTime) return; // user canceled
                   // Combine dueDate with selected time
                   const dueDateTime = new Date(dueDate);
-                  dueDateTime.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+                  dueDateTime.setHours(
+                    selectedTime.getHours(),
+                    selectedTime.getMinutes(),
+                    0,
+                    0,
+                  );
                   const now = new Date();
                   if (dueDateTime < now) {
-                    setErrors(prev => ({
+                    setErrors((prev) => ({
                       ...prev,
-                      dueTime: `${t('cannot_select_past_time')}`
+                      dueTime: `${t("cannot_select_past_time")}`,
                     }));
                     setDueTime(null); // optional: clear previous invalid time
                     return;
                   }
                   // Valid time, clear error if exists
-                  setErrors(prev => ({ ...prev, dueTime: undefined }));
+                  setErrors((prev) => ({ ...prev, dueTime: undefined }));
                   setDueTime(selectedTime);
                 }}
               />
             )}
-            <View >
+            <View>
               <TouchableOpacity
                 disabled={loading}
                 style={styles.submitButton}
@@ -1181,11 +1437,12 @@ export default function CreateTask({ route }) {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.submitButtonText}>{t("create_task")}</Text>
+                  <Text style={styles.submitButtonText}>
+                    {t("create_task")}
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>
-
           </ScrollView>
         </TouchableWithoutFeedback>
         <AttachmentModal
@@ -1202,11 +1459,11 @@ export default function CreateTask({ route }) {
         />
         <SpeechToTextModal
           visible={speechTextModal}
-          title={speechFlag == 'title' ? 'add_title' : 'add_description'}
+          title={speechFlag == "title" ? "add_title" : "add_description"}
           onClose={() => setspeechTextModal(false)}
           currentLanguage={currentLanguage}
           onResult={(value) =>
-            speechFlag === 'title'
+            speechFlag === "title"
               ? setTitle((prev) => prev + value)
               : setDescription((prev) => prev + value)
           }
@@ -1217,37 +1474,123 @@ export default function CreateTask({ route }) {
 }
 const styles = StyleSheet.create({
   inputContainer: { marginBottom: hp(2), position: "relative" },
-  input: { borderWidth: 1, borderColor: COLORS.gray, borderRadius: wp(1), padding: wp(3), fontSize: wp(3.5), fontFamily: "Poppins_400Regular", color: COLORS.black, }, inputIcon: { position: "absolute", right: wp(3), top: hp(1.5) }, audioPreview: {
-    flexDirection: "row", marginTop: hp(1),
-    justifyContent: "space-around", borderWidth: wp(0.4), paddingHorizontal: wp(1), maxWidth: wp(48), alignItems: "center", borderRadius: wp(24), borderColor: COLORS?.primary
-  }, errorText: {
-    color: "red", fontSize: wp(3), marginTop: hp(-0.8),
-    fontFamily: 'Poppins_400Regular', fontWeight: "600", marginHorizontal: wp(2)
-  }, recordingOverlay: {
-    flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center",
+  input: {
+    borderWidth: 1,
+    borderColor: COLORS.gray,
+    borderRadius: wp(1),
+    padding: wp(3),
+    fontSize: wp(3.5),
+    fontFamily: "Poppins_400Regular",
+    color: COLORS.black,
+  },
+  inputIcon: { position: "absolute", right: wp(3), top: hp(1.5) },
+  audioPreview: {
+    flexDirection: "row",
+    marginTop: hp(1),
+    justifyContent: "space-around",
+    borderWidth: wp(0.4),
+    paddingHorizontal: wp(1),
+    maxWidth: wp(48),
     alignItems: "center",
-  }, recordingPopup: {
-    backgroundColor: "#fff", borderRadius: wp(3),
-    alignItems: "center", width: wp(80), height: wp(80), borderRadius: wp(40), alignItems: "center", justifyContent: "center", borderWidth: wp(1), borderColor: COLORS?.primary
-  }, recordingText: {
-    fontSize: wp(3.5), marginBottom: hp(1), fontFamily: "Poppins_400Regular",
-  }, recordingTime: {
-    fontSize: wp(5), marginBottom: hp(2), fontFamily: "Poppins_400Regular",
-  }, stopButton: { backgroundColor: COLORS.primary, paddingHorizontal: wp(6), paddingVertical: hp(1), borderRadius: wp(2), }, stopButtonText: { color: "#fff", fontSize: wp(4.5), fontFamily: "Poppins_400Regular", },
-  label: { fontSize: wp(4), fontFamily: "Poppins_400Regular", marginBottom: hp(0.5) },
+    borderRadius: wp(24),
+    borderColor: COLORS?.primary,
+  },
+  errorText: {
+    color: "red",
+    fontSize: wp(3),
+    marginTop: hp(-0.8),
+    fontFamily: "Poppins_400Regular",
+    fontWeight: "600",
+    marginHorizontal: wp(2),
+  },
+  recordingOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  recordingPopup: {
+    backgroundColor: "#fff",
+    borderRadius: wp(3),
+    alignItems: "center",
+    width: wp(80),
+    height: wp(80),
+    borderRadius: wp(40),
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: wp(1),
+    borderColor: COLORS?.primary,
+  },
+  recordingText: {
+    fontSize: wp(3.5),
+    marginBottom: hp(1),
+    fontFamily: "Poppins_400Regular",
+  },
+  recordingTime: {
+    fontSize: wp(5),
+    marginBottom: hp(2),
+    fontFamily: "Poppins_400Regular",
+  },
+  stopButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: wp(6),
+    paddingVertical: hp(1),
+    borderRadius: wp(2),
+  },
+  stopButtonText: {
+    color: "#fff",
+    fontSize: wp(4.5),
+    fontFamily: "Poppins_400Regular",
+  },
+  label: {
+    fontSize: wp(4),
+    fontFamily: "Poppins_400Regular",
+    marginBottom: hp(0.5),
+  },
   radioContainer: { flexDirection: "row", marginBottom: hp(2) },
-  radioButton: { flexDirection: "row", alignItems: "center", marginRight: wp(4) },
+  radioButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: wp(4),
+  },
   radioCircle: {
-    width: wp(4), height: wp(4), borderRadius: wp(2), borderWidth: 1, borderColor: COLORS.gray, marginRight: wp(1.5),
+    width: wp(4),
+    height: wp(4),
+    borderRadius: wp(2),
+    borderWidth: 1,
+    borderColor: COLORS.gray,
+    marginRight: wp(1.5),
   },
-  radioLabel: { fontSize: wp(3.8), fontFamily: "Poppins_400Regular", lineHeight: hp(4), textTransform: "capitalize" },
-  dateButton: { borderWidth: 1, borderRadius: wp(1), padding: wp(3), },
+  radioLabel: {
+    fontSize: wp(3.8),
+    fontFamily: "Poppins_400Regular",
+    lineHeight: hp(4),
+    textTransform: "capitalize",
+  },
+  dateButton: { borderWidth: 1, borderRadius: wp(1), padding: wp(3) },
   micIconContainer: {
-    position: "absolute", right: wp(3), top: hp(5.2), margin: wp(1),
+    position: "absolute",
+    right: wp(3),
+    top: hp(5.2),
+    margin: wp(1),
     zIndex: 10,
-  }, dateText: { fontSize: wp(3.5), fontFamily: "Poppins_400Regular", color: COLORS.black }, submitButton: {
-    backgroundColor: COLORS.primary, padding: wp(3),
-    borderRadius: wp(2), marginVertical: hp(2), alignItems: "center",
   },
-  submitButtonText: { color: "#fff", fontSize: wp(4.5), fontFamily: "Poppins_600SemiBold", lineHeight: hp(4) },
+  dateText: {
+    fontSize: wp(3.5),
+    fontFamily: "Poppins_400Regular",
+    color: COLORS.black,
+  },
+  submitButton: {
+    backgroundColor: COLORS.primary,
+    padding: wp(3),
+    borderRadius: wp(2),
+    marginVertical: hp(2),
+    alignItems: "center",
+  },
+  submitButtonText: {
+    color: "#fff",
+    fontSize: wp(4.5),
+    fontFamily: "Poppins_600SemiBold",
+    lineHeight: hp(4),
+  },
 });

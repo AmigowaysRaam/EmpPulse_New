@@ -87,6 +87,7 @@
     "redux": "^5.0.1",
     "redux-saga": "^1.4.2",
     "reselect": "^5.1.1",
+    "socket.io-client": "^4.8.3",
     "toastify-react-native": "^7.2.3"
   },
   "devDependencies": {

@@ -2,7 +2,7 @@ import { Audio } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
     Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
@@ -162,7 +162,6 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
         }
     };
 
-    // ---------------- PLAY AUDIO ----------------
     const togglePlay = async () => {
         try {
             if (!audioUri) return;
@@ -198,7 +197,6 @@ const ChatInputBar = ({ inputText, setInputText, onSend, messageInputRef }) => {
     };
     const sendAudio = () => {
         if (!audioUri) return;
-
         onSend?.({
             type: "audio",
             uri: audioUri,

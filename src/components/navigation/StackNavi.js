@@ -13,6 +13,7 @@ import CreateGroupScreen from '../CreateGroupScreen';
 import CreateMpin from '../CreateMpin';
 import CreateTask from '../CreateTask';
 import forgetotpVerfication from '../forgetotpVerfication';
+import ForwardScreen from '../ForwardScreen';
 import GroupChatInfoScreen from '../GroupChatInfoScreen';
 import GroupChatScreen from '../GroupChatScreen';
 import LeadDetailtScreen from '../LeadDetailtScreen';
@@ -32,6 +33,8 @@ import OurStoreScreen from '../Ourstore';
 import PayrollLogScreen from '../PayrollLogScreen';
 import PayRollScreen from '../PayRollScreen';
 import PrivacyPolicyScreen from '../PrivacyPolicy';
+import ProjectDetailsScreen from '../ProjectDetailsScreen';
+import ProjectListScreen from '../ProjectListScreen';
 import Remainder from '../Remainder';
 import ResetMpin from '../ResetMpin';
 import SalesLocationScreen from '../SalesLoc';
@@ -94,7 +97,10 @@ export default function StackNavi() {
       <Stack.Screen name='AttendanceGroupScreen' component={AttendanceGroupScreen} />
       <Stack.Screen name='ChatProfileScreen' component={ChatProfileScreen} />
       <Stack.Screen name='CreateGroupScreen' component={CreateGroupScreen} />
-
+      <Stack.Screen name='ForwardScreen' component={ForwardScreen} />
+      <Stack.Screen name='ProjectDetailsScreen' component={ProjectDetailsScreen} />
+      <Stack.Screen name='ProjectListScreen' component={ProjectListScreen} />
+      
       <Stack.Screen
         name="LeadListScreen"
         component={LeadListScreen}
